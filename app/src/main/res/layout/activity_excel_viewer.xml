@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F3F3F3">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarExcel"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#107C41"
+        app:title="Excel Spreadsheet"
+        app:titleTextColor="@color/white"
+        app:navigationIcon="@android:drawable/ic_menu_revert" />
+
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D1D1D1" />
+
+    <!-- MS Excel Formula & Details Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#F8F9FA"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:elevation="1dp">
+
+        <TextView
+            android:id="@+id/tvNameBox"
+            android:layout_width="64dp"
+            android:layout_height="28dp"
+            android:background="#E1DFDD"
+            android:gravity="center"
+            android:text="A1"
+            android:textColor="#333333"
+            android:textSize="12.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="fx"
+            android:textColor="#666666"
+            android:textStyle="italic" />
+
+        <TextView
+            android:id="@+id/tvFormulaBar"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            android:layout_weight="1"
+            android:background="#FFFFFF"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:text="Select a cell or row to view details"
+            android:textColor="#202124"
+            android:textSize="12.5sp"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D1D1D1" />
+
+    <!-- Multi-Worksheet Tabs Bar (Shown when workbook contains multiple sheets) -->
+    <HorizontalScrollView
+        android:id="@+id/scrollSheetTabs"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:background="#EAEAEA"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="3dp"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/layoutSheetTabs"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" />
+
+    </HorizontalScrollView>
+
+    <View
+        android:id="@+id/dividerSheetTabs"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D1D1D1"
+        android:visibility="gone" />
+
+    <!-- Spreadsheet Grid Container with Horizontal & Vertical Scroll -->
+    <HorizontalScrollView
+        android:id="@+id/horizontalScrollExcel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="false">
+
+        <ScrollView
+            android:id="@+id/verticalScrollExcel"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:fillViewport="false">
+
+            <TableLayout
+                android:id="@+id/tableSpreadsheet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF" />
+
+        </ScrollView>
+    </HorizontalScrollView>
+
+    <!-- Bottom Actions Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/surface_light"
+        android:gravity="center"
+        android:elevation="4dp"
+        android:paddingHorizontal="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExportExcelPdf"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Spreadsheet as PDF"
+            app:backgroundTint="#107C41"
+            app:cornerRadius="10dp" />
+    </LinearLayout>
+
+</LinearLayout>

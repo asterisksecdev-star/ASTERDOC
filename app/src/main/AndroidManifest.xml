@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <queries>
+        <intent>
+            <action android:name="com.google.android.gms.ads.service.START" />
+        </intent>
+        <intent>
+            <action android:name="com.google.android.gms.ads.service.CACHE" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".AsterDocApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ASTERDOC">
+
+        <!-- Sample AdMob App ID for testing -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ASTERDOC"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.onboarding.OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.auth.AuthActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.welcome.WelcomeSlidesActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.viewer.PdfViewerActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ASTERDOC">
+
+            <!-- PDF Files -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/x-pdf" />
+                <data android:mimeType="application/vnd.pdf" />
+                <data android:mimeType="text/pdf" />
+            </intent-filter>
+
+            <!-- Word, PPT, Text Files -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+                <data android:mimeType="application/vnd.ms-powerpoint" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/rtf" />
+                <data android:mimeType="application/rtf" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.viewer.ExcelViewerActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ASTERDOC">
+
+            <!-- Excel & CSV Files -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                <data android:mimeType="application/vnd.ms-excel" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="text/comma-separated-values" />
+                <data android:mimeType="application/csv" />
+                <data android:mimeType="application/excel" />
+                <data android:mimeType="application/x-excel" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.tools.ToolActionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.tools.arranger.PdfArrangerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.tools.sign.SignPdfActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
+            android:name=".ui.faq.FaqActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <service
+            android:name=".auth.AppLockService"
+            android:stopWithTask="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+</manifest>

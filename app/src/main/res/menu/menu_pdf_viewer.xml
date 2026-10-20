@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_edit_mode"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/menu_draw_edit"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_grid_view"
+        android:icon="@drawable/ic_grid_view"
+        android:title="@string/menu_page_overview"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/ic_share"
+        android:title="@string/share"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_doc_info"
+        android:icon="@drawable/ic_info"
+        android:title="@string/menu_doc_details"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_convert_word"
+        android:title="@string/menu_convert_word"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_compress"
+        android:title="@string/compress_pdf"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sign"
+        android:title="@string/sign_pdf"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_ocr"
+        android:title="@string/ocr_text"
+        app:showAsAction="never" />
+
+</menu>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- White Document Sheet -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,24 L66,24 L76,36 L76,82 A4,4 0,0,1 72,86 L36,86 A4,4 0,0,1 32,82 L32,28 A4,4 0,0,1 36,24 Z" />
+
+    <!-- Folded Corner -->
+    <path
+        android:fillColor="#D2E3FC"
+        android:pathData="M66,24 L66,36 L76,36 Z" />
+
+    <!-- Star Accent Center Lines -->
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M53,42 L55,42 L55,68 L53,68 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M40,54 L68,54 L68,56 L40,56 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M44,45 L64,65 L62,67 L42,47 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M64,47 L44,67 L42,65 L62,45 Z" />
+
+    <!-- Outer Glow / Subtle Border -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M34,24 L66,24 L76,36 L76,82 A4,4 0,0,1 72,86 L36,86 A4,4 0,0,1 32,82 L32,28 A4,4 0,0,1 36,24 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#E8EAED" />
+
+</vector>

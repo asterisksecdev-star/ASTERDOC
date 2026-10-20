@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#191C1E">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top Header Container -->
+        <LinearLayout
+            android:id="@+id/layoutTopBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1F2023"
+            android:elevation="4dp"
+            android:orientation="vertical">
+
+            <!-- Default Top Toolbar -->
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbarPdfViewer"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="#1F2023"
+                app:navigationIcon="@drawable/ic_arrow_back"
+                app:navigationIconTint="#E3E2E6"
+                app:title="Document"
+                app:titleTextColor="#E3E2E6" />
+
+            <!-- In-Document Search Toolbar (Hidden by default) -->
+            <LinearLayout
+                android:id="@+id/layoutSearchBar"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:visibility="gone">
+
+                <ImageButton
+                    android:id="@+id/btnCloseSearch"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close search"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="#E3E2E6" />
+
+                <EditText
+                    android:id="@+id/etSearchQuery"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_drive_search_bar"
+                    android:hint="@string/search"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:paddingHorizontal="14dp"
+                    android:textColor="#E3E2E6"
+                    android:textColorHint="#8E918F"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvSearchMatchCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    android:text="0/0"
+                    android:textColor="#C4C6D0"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnSearchPrev"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Previous match"
+                    android:src="@drawable/ic_chevron_left"
+                    app:tint="#E3E2E6" />
+
+                <ImageButton
+                    android:id="@+id/btnSearchNext"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Next match"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="#E3E2E6" />
+
+            </LinearLayout>
+
+            <!-- Quick Tool Chips Strip -->
+            <HorizontalScrollView
+                android:id="@+id/scrollToolChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1F2023"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipConvertToWord"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/pdf_to_word"
+                        android:textColor="#E3E2E6"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="#2D2F31"
+                        app:chipIcon="@android:drawable/ic_menu_edit"
+                        app:chipIconTint="#A8C7FA"
+                        app:chipStrokeColor="#3C4043"
+                        app:chipStrokeWidth="1dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCompressPdf"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/compress_pdf"
+                        android:textColor="#E3E2E6"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="#2D2F31"
+                        app:chipIcon="@android:drawable/ic_menu_sort_by_size"
+                        app:chipIconTint="#A8C7FA"
+                        app:chipStrokeColor="#3C4043"
+                        app:chipStrokeWidth="1dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSignPdf"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/sign_pdf"
+                        android:textColor="#E3E2E6"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="#2D2F31"
+                        app:chipIcon="@android:drawable/ic_menu_edit"
+                        app:chipIconTint="#A8C7FA"
+                        app:chipStrokeColor="#3C4043"
+                        app:chipStrokeWidth="1dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipOcrText"
+                        style="@style/Widget.Material3.Chip.Assist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/ocr_text"
+                        android:textColor="#E3E2E6"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="#2D2F31"
+                        app:chipIcon="@drawable/ic_search"
+                        app:chipIconTint="#A8C7FA"
+                        app:chipStrokeColor="#3C4043"
+                        app:chipStrokeWidth="1dp"
+                        app:ensureMinTouchTargetSize="false" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+        <!-- PDF Pages RecyclerView Canvas -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPdfPages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:paddingVertical="4dp" />
+
+    </LinearLayout>
+
+    <!-- Google Drive Signature Floating Control Pill Bar (Bottom Center Overlay) -->
+    <LinearLayout
+        android:id="@+id/cardBottomControls"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_drive_floating_bar"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBottomGrid"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Grid view"
+            android:src="@drawable/ic_grid_view"
+            app:tint="#E3E2E6" />
+
+        <ImageButton
+            android:id="@+id/btnPrevPage"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Previous Page"
+            android:src="@drawable/ic_chevron_left"
+            app:tint="#E3E2E6" />
+
+        <!-- Floating Page Indicator Pill (Tap to Jump) -->
+        <TextView
+            android:id="@+id/tvReaderPageIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginHorizontal="6dp"
+            android:background="@drawable/bg_drive_page_pill"
+            android:gravity="center"
+            android:paddingHorizontal="14dp"
+            android:text="1 / 1"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnNextPage"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Next Page"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="#E3E2E6" />
+
+        <ImageButton
+            android:id="@+id/btnZoomOut"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Zoom Out"
+            android:src="@drawable/ic_zoom_out"
+            app:tint="#E3E2E6" />
+
+        <ImageButton
+            android:id="@+id/btnZoomIn"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Zoom In"
+            android:src="@drawable/ic_zoom_in"
+            app:tint="#A8C7FA" />
+
+    </LinearLayout>
+
+    <!-- Google Drive Draw & Edit Markup Toolbar Overlay (Hidden by default, shown in Edit Mode) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardEditControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        app:cardBackgroundColor="#282A2D"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="12dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="12dp">
+
+            <!-- Scrollable Tools Toolbar Strip -->
+            <HorizontalScrollView
+                android:id="@+id/scrollEditTools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Drawing Tools -->
+                    <ImageButton
+                        android:id="@+id/btnToolPen"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Pen Tool"
+                        android:src="@android:drawable/ic_menu_edit"
+                        app:tint="#A8C7FA" />
+
+                    <ImageButton
+                        android:id="@+id/btnToolHighlighter"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Highlighter"
+                        android:src="@android:drawable/ic_menu_view"
+                        app:tint="#E3E2E6" />
+
+                    <ImageButton
+                        android:id="@+id/btnToolEraser"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Eraser"
+                        android:src="@drawable/ic_close"
+                        app:tint="#E3E2E6" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="24dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:background="#3C4043" />
+
+                    <!-- Color Options -->
+                    <View
+                        android:id="@+id/btnColorRed"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:background="#E53935" />
+
+                    <View
+                        android:id="@+id/btnColorBlue"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="8dp"
+                        android:background="#1E88E5" />
+
+                    <View
+                        android:id="@+id/btnColorBlack"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="8dp"
+                        android:background="#000000" />
+
+                    <View
+                        android:id="@+id/btnColorGreen"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="8dp"
+                        android:background="#43A047" />
+
+                    <View
+                        android:id="@+id/btnColorYellow"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="8dp"
+                        android:background="#FFEB3B" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="24dp"
+                        android:layout_marginHorizontal="8dp"
+                        android:background="#3C4043" />
+
+                    <!-- Stroke Actions -->
+                    <ImageButton
+                        android:id="@+id/btnUndoDraw"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Undo stroke"
+                        android:src="@android:drawable/ic_menu_revert"
+                        app:tint="#E3E2E6" />
+
+                    <ImageButton
+                        android:id="@+id/btnRedoDraw"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Redo stroke"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="#E3E2E6" />
+
+                    <ImageButton
+                        android:id="@+id/btnClearDraw"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Clear drawings"
+                        android:src="@android:drawable/ic_menu_delete"
+                        app:tint="#E3E2E6" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="6dp"
+                android:background="#3C4043" />
+
+            <!-- Dedicated Action Row (Exit/Close and Save) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/menu_draw_edit"
+                    android:textColor="#C4C6D0"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancelEditMode"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:text="@string/close"
+                    android:textColor="#E3E2E6"
+                    android:textSize="12sp"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="#5B5E62" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDoneEditMode"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/save"
+                    android:textColor="#00315B"
+                    android:textSize="12sp"
+                    app:backgroundTint="#A8C7FA"
+                    app:cornerRadius="8dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Floating Toggle Tools Button (Restores controls when hidden in immersive reading) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabToggleTools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:contentDescription="Restore controls"
+        android:src="@drawable/ic_grid_view"
+        android:visibility="gone"
+        app:backgroundTint="#2D2F31"
+        app:fabSize="mini"
+        app:tint="#A8C7FA" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Background Rounded Square -->
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M18,0 L82,0 A18,18 0,0,1 100,18 L100,82 A18,18 0,0,1 82,100 L18,100 A18,18 0,0,1 0,82 L0,18 A18,18 0,0,1 18,0 Z" />
+
+    <!-- Document Sheet Outline -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,20 L62,20 L74,32 L74,80 A4,4 0,0,1 70,84 L28,84 A4,4 0,0,1 24,80 L24,24 A4,4 0,0,1 28,20 Z" />
+
+    <!-- Folded Corner -->
+    <path
+        android:fillColor="#D2E3FC"
+        android:pathData="M62,20 L62,32 L74,32 Z" />
+
+    <!-- Aster Star Accent (Primary Blue) -->
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M49,38 L51,38 L51,68 L49,68 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M35,52 L65,52 L65,54 L35,54 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M39,42 L61,64 L59,66 L37,44 Z" />
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M61,44 L39,66 L37,64 L59,42 Z" />
+
+</vector>
