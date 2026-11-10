@@ -15,326 +15,160 @@
         app:title="@string/sign_pdf_title"
         app:titleTextColor="@color/white" />
 
-    <FrameLayout
+    <ScrollView
+        android:id="@+id/layoutUploadPhase"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:padding="16dp">
 
-        <!-- Phase 1: Upload and Configure -->
-        <ScrollView
-            android:id="@+id/layoutUploadPhase"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Step 1: Select PDF -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/sign_step1_title"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnPickSignPdf"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:layout_marginTop="12dp"
-                            android:text="@string/btn_choose_pdf"
-                            app:cornerRadius="10dp" />
-
-                        <TextView
-                            android:id="@+id/tvChosenPdfName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/no_pdf_selected"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Step 2: Signature Image & Controls -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/sign_step2_title"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:id="@+id/ivSignaturePreview"
-                                android:layout_width="100dp"
-                                android:layout_height="60dp"
-                                android:background="#F1F3F4"
-                                android:contentDescription="Signature Preview"
-                                android:scaleType="fitCenter" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnPickSignatureImage"
-                                    style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="40dp"
-                                    android:paddingHorizontal="4dp"
-                                    android:text="@string/btn_choose_sig_img"
-                                    android:textSize="12sp"
-                                    app:cornerRadius="8dp" />
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnRemoveSignature"
-                                    style="@style/Widget.Material3.Button.TextButton"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="36dp"
-                                    android:layout_marginTop="4dp"
-                                    android:text="Remove"
-                                    android:textColor="#EA4335"
-                                    android:textSize="12sp" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvChosenSigName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="No signature image uploaded"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="13sp" />
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Continue to Editor Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnContinueToEditor"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="24dp"
-                    android:enabled="false"
-                    android:text="Continue to Placement"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    app:cornerRadius="12dp" />
-
-            </LinearLayout>
-
-        </ScrollView>
-
-        <!-- Phase 2: Full Screen Editor / Placement -->
         <LinearLayout
-            android:id="@+id/layoutFullScreenEditor"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-            <!-- PDF Page Preview Frame with Signature Overlay -->
-            <FrameLayout
-                android:id="@+id/layoutPdfPreviewFrame"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="#202124">
-
-                <ImageView
-                    android:id="@+id/ivPdfPagePreview"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="PDF Page"
-                    android:scaleType="fitCenter" />
-
-                <ImageView
-                    android:id="@+id/ivInteractiveSignatureOverlay"
-                    android:layout_width="120dp"
-                    android:layout_height="60dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="Signature Overlay"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone" />
-
-            </FrameLayout>
-
-            <!-- Bottom Editor Controls -->
-            <LinearLayout
+            <!-- Step 1: Select PDF -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/surface_light"
-                android:orientation="vertical"
-                android:padding="16dp">
+                app:cardBackgroundColor="@color/surface_light"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
 
-                <!-- Page Navigation -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPrevPageSign"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="Prev"
-                        app:cornerRadius="8dp" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:id="@+id/tvPageNumSign"
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:text="Page 1 of 1"
+                        android:text="@string/sign_step1_title"
                         android:textColor="@color/text_primary"
-                        android:textSize="14sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Choose the PDF document you want to sign."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnNextPageSign"
+                        android:id="@+id/btnPickSignPdf"
                         style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="Next"
-                        app:cornerRadius="8dp" />
-
-                </LinearLayout>
-
-                <!-- Rotation and Width Controls -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/btn_choose_pdf"
+                        app:cornerRadius="10dp" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:id="@+id/tvChosenPdfName"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Rotate:"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/no_pdf_selected"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRotateCCW"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="↶ 15°"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRotateCW"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="15° ↷"
-                        android:textSize="12sp" />
-
-                    <SeekBar
-                        android:id="@+id/seekBarSigRotate"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:max="360"
-                        android:progress="0" />
-
                 </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Step 2: Signature Image & Controls -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/surface_light"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Size:"
+                        android:text="@string/sign_step2_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Select an image of your handwritten signature."
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <SeekBar
-                        android:id="@+id/seekBarSigWidth"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:max="250"
-                        android:progress="120" />
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivSignaturePreview"
+                            android:layout_width="100dp"
+                            android:layout_height="60dp"
+                            android:background="#202124"
+                            android:contentDescription="Signature Preview"
+                            android:padding="4dp"
+                            android:scaleType="fitCenter" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnPickSignatureImage"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:paddingHorizontal="8dp"
+                            android:text="@string/btn_choose_sig_img"
+                            android:textSize="13sp"
+                            app:cornerRadius="10dp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvChosenSigName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="No signature image uploaded"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
 
                 </LinearLayout>
 
-                <!-- Apply Signature Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnApplySignature"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/btn_apply_sig"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    app:cornerRadius="12dp" />
+            </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
+            <!-- Continue to Editor Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnContinueToEditor"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
+                android:enabled="false"
+                android:text="Continue to Placement"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
 
-    </FrameLayout>
+    </ScrollView>
 
 </LinearLayout>

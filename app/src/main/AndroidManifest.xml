@@ -142,6 +142,11 @@
             android:theme="@style/Theme.ASTERDOC" />
 
         <activity
+            android:name=".ui.tools.sign.SignatureEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
             android:name=".ui.tools.arranger.PdfArrangerActivity"
             android:exported="false"
             android:theme="@style/Theme.ASTERDOC" />

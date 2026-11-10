@@ -17,6 +17,7 @@
     <item type="id" name="btnRotateCW" />
     <item type="id" name="btnRemoveSignature" />
     <item type="id" name="btnTopBack" />
+    <item type="id" name="btnTopWord" />
     <item type="id" name="btnTopRotate" />
     <item type="id" name="btnTopInfo" />
     <item type="id" name="btnTopShare" />
@@ -27,4 +28,6 @@
     <item type="id" name="fabEditDocument" />
     <item type="id" name="btnInvertColor" />
     <item type="id" name="tvZoomToast" />
+    <item type="id" name="fabToggleTools" />
+    <item type="id" name="chipConvertToWord" />
 </resources>

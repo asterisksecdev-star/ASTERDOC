@@ -70,7 +70,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private LinearLayoutManager layoutManager;
 
     private View layoutTopBarContainer;
-    private View btnTopBack, btnTopRotate, btnTopInfo, btnTopShare, btnTopMenu;
+    private View btnTopBack, btnTopWord, btnTopRotate, btnTopInfo, btnTopShare, btnTopMenu;
 
     private LinearLayout layoutVerticalScrollPill;
     private LinearLayout layoutPageCounterPill;
@@ -182,6 +182,14 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         if (isEditMode) return;
         autoHideHandler.removeCallbacks(autoHideRunnable);
 
+        if (layoutTopBarContainer != null) {
+            if (layoutTopBarContainer.getVisibility() != View.VISIBLE) {
+                layoutTopBarContainer.setVisibility(View.VISIBLE);
+            }
+            layoutTopBarContainer.animate().cancel();
+            layoutTopBarContainer.setAlpha(1.0f);
+        }
+
         if (layoutVerticalScrollPill != null) {
             if (layoutVerticalScrollPill.getVisibility() != View.VISIBLE) {
                 layoutVerticalScrollPill.setVisibility(View.VISIBLE);
@@ -189,13 +197,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             layoutVerticalScrollPill.animate().cancel();
             layoutVerticalScrollPill.setAlpha(1.0f);
         }
-        if (fabEditDocument != null) {
-            if (fabEditDocument.getVisibility() != View.VISIBLE) {
-                fabEditDocument.setVisibility(View.VISIBLE);
-            }
-            fabEditDocument.animate().cancel();
-            fabEditDocument.setAlpha(1.0f);
-        }
+
         if (layoutPageCounterPill != null) {
             if (layoutPageCounterPill.getVisibility() != View.VISIBLE) {
                 layoutPageCounterPill.setVisibility(View.VISIBLE);
@@ -204,25 +206,41 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             layoutPageCounterPill.setAlpha(1.0f);
         }
 
-        autoHideHandler.postDelayed(autoHideRunnable, 1000);
+        if (fabEditDocument != null) {
+            if (fabEditDocument.getVisibility() != View.VISIBLE) {
+                fabEditDocument.setVisibility(View.VISIBLE);
+            }
+            fabEditDocument.animate().cancel();
+            fabEditDocument.setAlpha(1.0f);
+        }
+
+        autoHideHandler.postDelayed(autoHideRunnable, 1200);
     }
 
     private void hideFloatingControlsWithAnimation() {
         if (isEditMode) return;
+
+        if (layoutTopBarContainer != null && layoutTopBarContainer.getVisibility() == View.VISIBLE) {
+            layoutTopBarContainer.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                if (layoutTopBarContainer != null) layoutTopBarContainer.setVisibility(View.GONE);
+            }).start();
+        }
 
         if (layoutVerticalScrollPill != null && layoutVerticalScrollPill.getVisibility() == View.VISIBLE) {
             layoutVerticalScrollPill.animate().alpha(0f).setDuration(250).withEndAction(() -> {
                 if (layoutVerticalScrollPill != null) layoutVerticalScrollPill.setVisibility(View.GONE);
             }).start();
         }
-        if (fabEditDocument != null && fabEditDocument.getVisibility() == View.VISIBLE) {
-            fabEditDocument.animate().alpha(0f).setDuration(250).withEndAction(() -> {
-                if (fabEditDocument != null) fabEditDocument.setVisibility(View.GONE);
-            }).start();
-        }
+
         if (layoutPageCounterPill != null && layoutPageCounterPill.getVisibility() == View.VISIBLE) {
             layoutPageCounterPill.animate().alpha(0f).setDuration(250).withEndAction(() -> {
                 if (layoutPageCounterPill != null) layoutPageCounterPill.setVisibility(View.GONE);
+            }).start();
+        }
+
+        if (fabEditDocument != null && fabEditDocument.getVisibility() == View.VISIBLE) {
+            fabEditDocument.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                if (fabEditDocument != null) fabEditDocument.setVisibility(View.GONE);
             }).start();
         }
     }
@@ -310,6 +328,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private void initViews() {
         layoutTopBarContainer = findViewById(R.id.layoutTopBarContainer);
         btnTopBack = findViewById(R.id.btnTopBack);
+        btnTopWord = findViewById(R.id.btnTopWord);
         btnTopRotate = findViewById(R.id.btnTopRotate);
         btnTopInfo = findViewById(R.id.btnTopInfo);
         btnTopShare = findViewById(R.id.btnTopShare);
@@ -389,10 +408,12 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
     private void setupToolbar() {
         if (btnTopBack != null) btnTopBack.setOnClickListener(v -> finish());
+        if (btnTopWord != null) btnTopWord.setOnClickListener(v -> openToolForCurrentDoc("PDF_TO_WORD", "PDF to Word"));
         if (btnTopRotate != null) btnTopRotate.setOnClickListener(v -> toggleScreenOrientation());
         if (btnTopInfo != null) btnTopInfo.setOnClickListener(v -> showDocumentDetails());
         if (btnTopShare != null) btnTopShare.setOnClickListener(v -> shareFile());
         if (btnTopMenu != null) btnTopMenu.setOnClickListener(this::showPopupMenu);
+        if (fabEditDocument != null) fabEditDocument.setOnClickListener(v -> enterEditMode());
     }
 
     private void showPopupMenu(View view) {

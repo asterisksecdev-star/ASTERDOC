@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AsterDocs</string>
+    <string name="app_name">Asterine</string>
     <string name="app_tagline">All Your Documents. One Powerful App.</string>
     <string name="nav_home">Home</string>
     <string name="nav_files">Recent</string>
     <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
-    <string name="welcome">Welcome to AsterDocs</string>
+    <string name="welcome">Welcome to Asterine</string>
     <string name="settings">Settings</string>
     <string name="help_faq">Help &amp; Frequently Asked Questions</string>
     <string name="language">Language</string>
@@ -28,7 +28,7 @@
     <string name="clear_temp">Clear Temporary Files</string>
     <string name="privacy_policy">Privacy Policy &amp; Security</string>
     <string name="sign_out">Sign Out</string>
-    <string name="app_version">AsterDocs Version</string>
+    <string name="app_version">Asterine Version</string>
     <string name="empty_trash">Empty Trash 🗑️</string>
     <string name="scan_digitise">Scan &amp; Digitise Documents</string>
     <string name="select_gallery">Select Images from Gallery 🖼️</string>
@@ -72,7 +72,7 @@
     <string name="convert">Convert</string>
     <string name="auth_title_welcome">Welcome Back</string>
     <string name="auth_subtitle">Sign in with your username to access your secure document toolbox</string>
-    <string name="auth_subtitle_signup">Create a new secure account for AsterDocs</string>
+    <string name="auth_subtitle_signup">Create a new secure account for Asterine</string>
     <string name="username_hint_helper">Enter your registered username</string>
     <string name="username_signup_helper">Choose a unique username for login</string>
     <string name="email_address">Email Address</string>
@@ -88,7 +88,7 @@
     <string name="err_invalid_credentials">Invalid username or password. Please check your credentials.</string>
     <string name="msg_password_updated">Password updated successfully! Please sign in with your new password.</string>
     <string name="err_no_account_found">No account found with this username or email.</string>
-    <string name="paywall_title">⭐ Upgrade to AsterDocs Premium</string>
+    <string name="paywall_title">⭐ Upgrade to Asterine Premium</string>
     <string name="paywall_msg">Unlock all Premium Tools (Sign PDF, Merge, Compress, OCR Text, PDF to Word, Page Arranger, etc.):\n\n• Monthly Subscription: $1.49 / month\n• Yearly Subscription: $9.99 / year (Save 45%)\n• Lifetime Access: $19.99 (One-time purchase)\n\nGoogle Play Billing integrated for secure official transactions.</string>
     <string name="paywall_yearly">Yearly ($9.99/yr)</string>
     <string name="paywall_monthly">Monthly ($1.49/mo)</string>
@@ -112,7 +112,7 @@
     <string name="reset_pwd_hint_confirm">Confirm New Password</string>
     <string name="ocr_desc">Extract editable text from images or PDFs using ML Kit text recognition.</string>
     <string name="ocr_select_file">Select Image/Document for OCR</string>
-    <string name="pro_title">AsterDocs Unlimited</string>
+    <string name="pro_title">Asterine Unlimited</string>
     <string name="pro_desc">All PDF editing tools, OCR text scanner, document conversion, compression, page arranger, and viewer features are 100% free for everyone.</string>
     <string name="upgrade_to_pro">100% Free &amp; Unlocked</string>
     <string name="premium_active">100% Free &amp; Unlocked</string>
@@ -125,8 +125,8 @@
     <string name="err_cache_clear_failed">Failed to clear cache</string>
     <string name="no_recent_docs">No recent documents found</string>
     <string name="no_files_found">No documents found</string>
-    <string name="support_author_title">❤️ Support AsterDocs Creator</string>
-    <string name="support_author_msg">If AsterDocs has helped you with your documents and studies, you can support the creator:\n\n👤 Name: DUSHIMIMANA Jean de Dieu\n🏦 Bank: I&amp;M Bank\n💳 Account: 20157915001\n\nThank you for your generous support!</string>
+    <string name="support_author_title">❤️ Support Asterine Creator</string>
+    <string name="support_author_msg">If Asterine has helped you with your documents and studies, you can support the creator:\n\n👤 Name: DUSHIMIMANA Jean de Dieu\n🏦 Bank: I&amp;M Bank\n💳 Account: 20157915001\n\nThank you for your generous support!</string>
     <string name="copy_bank_account">Copy Account Number</string>
     <string name="close">Close</string>
     <string name="bank_copied_msg">Bank account copied to clipboard!</string>
@@ -154,7 +154,7 @@
     <string name="select_doc_picker">Select Document (PDF, Word, Excel, PPT)</string>
     <string name="msg_import_error">Unable to import selected document.</string>
     <string name="msg_prep_doc_view">Preparing document view...</string>
-    <string name="faq_knowledge_base">💡 AsterDocs Knowledge Base</string>
+    <string name="faq_knowledge_base">💡 Asterine Knowledge Base</string>
     <string name="faq_knowledge_desc">Find answers to common questions about document conversions, OCR, permissions, and app features.</string>
     <string name="faq_q1">❓ Why can\'t I select or copy text from some PDF files?</string>
     <string name="faq_a1">Some PDF files are created from scanned paper documents or photos rather than digital text. These are image-based PDFs.\n\nTo extract and copy text from image PDFs, use our built-in AI \'OCR Text Extract\' tool from the Tools tab!</string>
@@ -235,7 +235,7 @@
     <string name="draw_mode_active">Draw &amp; Edit Mode Activated. Draw on any page!</string>
     <string name="onboarding_step_format">Step %1$d of 3</string>
 
-    <string name="privacy_policy_message">🔒 AsterDocs Privacy &amp; Security Policy\n\n1. On-Device Local Processing:\nAll document operations, including PDF conversions, OCR text extraction, compression, merging, and signatures, take place 100% locally on your device. No document files are ever uploaded or transmitted to external servers.\n\n2. User Account Data:\nYour account credentials and preferences are securely encrypted locally on your device.\n\n3. Permissions &amp; Usage:\n• Camera: Used exclusively for document scanning when initiated by you.\n• Storage/Media: Used to read and save document files you select.\n\n4. Billing &amp; Subscriptions:\nSubscriptions are processed securely via official Google Play Billing.\n\n5. Account &amp; Data Deletion:\nYou have full control over your data and may request account deletion at any time.</string>
+    <string name="privacy_policy_message">🔒 Asterine Privacy &amp; Security Policy\n\n1. On-Device Local Processing:\nAll document operations, including PDF conversions, OCR text extraction, compression, merging, and signatures, take place 100% locally on your device. No document files are ever uploaded or transmitted to external servers.\n\n2. User Account Data:\nYour account credentials and preferences are securely encrypted locally on your device.\n\n3. Permissions &amp; Usage:\n• Camera: Used exclusively for document scanning when initiated by you.\n• Storage/Media: Used to read and save document files you select.\n\n4. Billing &amp; Subscriptions:\nSubscriptions are processed securely via official Google Play Billing.\n\n5. Account &amp; Data Deletion:\nYou have full control over your data and may request account deletion at any time.</string>
     <string name="delete_account_btn">Delete Account &amp; Data</string>
 
     <string name="reset_pwd_hint_code">Verification Code</string>
@@ -277,14 +277,14 @@
     <string name="cd_select_all">Select all</string>
 
     <string name="welcome_title_1">Welcome, %1$s! 🎉</string>
-    <string name="welcome_subtitle_1">Your AsterDocs toolbox is ready.</string>
+    <string name="welcome_subtitle_1">Your Asterine toolbox is ready.</string>
     <string name="welcome_body_1">You now have access to a full suite of document tools designed to help you create, convert, scan, edit, sign, and manage PDFs with ease.</string>
     <string name="welcome_title_2">Powerful PDF Tools 🛠️</string>
     <string name="welcome_subtitle_2">Convert, Compress &amp; Scan On The Go</string>
     <string name="welcome_body_2">Easily convert PDFs to Word, extract text using AI OCR, merge multiple documents, and scan physical documents directly with your phone.</string>
     <string name="welcome_title_3">Private &amp; Offline-First 🔒</string>
     <string name="welcome_subtitle_3">Your Documents Stay On Your Device</string>
-    <string name="welcome_body_3">AsterDocs processes your private files locally on your phone. Enjoy fast performance without uploading sensitive documents to external servers.</string>
+    <string name="welcome_body_3">Asterine processes your private files locally on your phone. Enjoy fast performance without uploading sensitive documents to external servers.</string>
 
     <string name="pdf_files">PDF Files</string>
     <string name="word_files">Word Files</string>

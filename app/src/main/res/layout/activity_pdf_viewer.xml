@@ -10,173 +10,199 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Top Header Container -->
+        <!-- Top Header Action Bar (Matching Screenshot 1) -->
         <LinearLayout
             android:id="@+id/layoutTopBarContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#1F2023"
-            android:elevation="4dp"
-            android:orientation="vertical">
+            android:layout_height="64dp"
+            android:background="#191C1E"
+            android:elevation="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp">
 
-            <!-- Default Top Toolbar -->
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbarPdfViewer"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="#1F2023"
-                app:navigationIcon="@drawable/ic_arrow_back"
-                app:navigationIconTint="#E3E2E6"
-                app:title="Document"
-                app:titleTextColor="#E3E2E6" />
+            <!-- Back Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
 
-            <!-- In-Document Search Toolbar (Hidden by default) -->
-            <LinearLayout
-                android:id="@+id/layoutSearchBar"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="12dp"
-                android:visibility="gone">
-
-                <ImageButton
-                    android:id="@+id/btnCloseSearch"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Close search"
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Back"
                     android:src="@drawable/ic_arrow_back"
-                    app:tint="#E3E2E6" />
+                    app:tint="#000000" />
+            </FrameLayout>
 
-                <EditText
-                    android:id="@+id/etSearchQuery"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_drive_search_bar"
-                    android:hint="@string/search"
-                    android:imeOptions="actionSearch"
-                    android:inputType="text"
-                    android:paddingHorizontal="14dp"
-                    android:textColor="#E3E2E6"
-                    android:textColorHint="#8E918F"
-                    android:textSize="14sp" />
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- W (Word) Action Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopWord"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
 
                 <TextView
-                    android:id="@+id/tvSearchMatchCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="8dp"
-                    android:text="0/0"
-                    android:textColor="#C4C6D0"
-                    android:textSize="12sp"
+                    android:layout_gravity="center"
+                    android:text="W"
+                    android:textColor="#000000"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
+            </FrameLayout>
 
-                <ImageButton
-                    android:id="@+id/btnSearchPrev"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Previous match"
-                    android:src="@drawable/ic_chevron_left"
-                    app:tint="#E3E2E6" />
+            <!-- Rotate Action Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopRotate"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
 
-                <ImageButton
-                    android:id="@+id/btnSearchNext"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Next match"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="#E3E2E6" />
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Rotate"
+                    android:src="@drawable/ic_top_rotate"
+                    app:tint="#000000" />
+            </FrameLayout>
 
-            </LinearLayout>
+            <!-- Info Action Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopInfo"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
 
-            <!-- Quick Tool Chips Strip -->
-            <HorizontalScrollView
-                android:id="@+id/scrollToolChips"
-                android:layout_width="match_parent"
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Details"
+                    android:src="@drawable/ic_info"
+                    app:tint="#000000" />
+            </FrameLayout>
+
+            <!-- Share Action Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopShare"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="Share"
+                    android:src="@drawable/ic_top_share"
+                    app:tint="#000000" />
+            </FrameLayout>
+
+            <!-- Menu Action Button (White Circle) -->
+            <FrameLayout
+                android:id="@+id/btnTopMenu"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_circle_white"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="More options"
+                    android:src="@drawable/ic_more_vert"
+                    app:tint="#000000" />
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- In-Document Search Bar (Hidden by default) -->
+        <LinearLayout
+            android:id="@+id/layoutSearchBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#1F2023"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btnCloseSearch"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Close search"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#E3E2E6" />
+
+            <EditText
+                android:id="@+id/etSearchQuery"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_drive_search_bar"
+                android:hint="@string/search"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:paddingHorizontal="14dp"
+                android:textColor="#E3E2E6"
+                android:textColorHint="#8E918F"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvSearchMatchCount"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#1F2023"
-                android:paddingHorizontal="12dp"
-                android:paddingBottom="8dp"
-                android:scrollbars="none">
+                android:layout_marginHorizontal="8dp"
+                android:text="0/0"
+                android:textColor="#C4C6D0"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+            <ImageButton
+                android:id="@+id/btnSearchPrev"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Previous match"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="#E3E2E6" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipConvertToWord"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/pdf_to_word"
-                        android:textColor="#E3E2E6"
-                        android:textSize="12sp"
-                        app:chipBackgroundColor="#2D2F31"
-                        app:chipIcon="@android:drawable/ic_menu_edit"
-                        app:chipIconTint="#A8C7FA"
-                        app:chipStrokeColor="#3C4043"
-                        app:chipStrokeWidth="1dp"
-                        app:ensureMinTouchTargetSize="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipCompressPdf"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/compress_pdf"
-                        android:textColor="#E3E2E6"
-                        android:textSize="12sp"
-                        app:chipBackgroundColor="#2D2F31"
-                        app:chipIcon="@android:drawable/ic_menu_sort_by_size"
-                        app:chipIconTint="#A8C7FA"
-                        app:chipStrokeColor="#3C4043"
-                        app:chipStrokeWidth="1dp"
-                        app:ensureMinTouchTargetSize="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipSignPdf"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/sign_pdf"
-                        android:textColor="#E3E2E6"
-                        android:textSize="12sp"
-                        app:chipBackgroundColor="#2D2F31"
-                        app:chipIcon="@android:drawable/ic_menu_edit"
-                        app:chipIconTint="#A8C7FA"
-                        app:chipStrokeColor="#3C4043"
-                        app:chipStrokeWidth="1dp"
-                        app:ensureMinTouchTargetSize="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipOcrText"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="32dp"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/ocr_text"
-                        android:textColor="#E3E2E6"
-                        android:textSize="12sp"
-                        app:chipBackgroundColor="#2D2F31"
-                        app:chipIcon="@drawable/ic_search"
-                        app:chipIconTint="#A8C7FA"
-                        app:chipStrokeColor="#3C4043"
-                        app:chipStrokeWidth="1dp"
-                        app:ensureMinTouchTargetSize="false" />
-
-                </LinearLayout>
-
-            </HorizontalScrollView>
+            <ImageButton
+                android:id="@+id/btnSearchNext"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Next match"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="#E3E2E6" />
 
         </LinearLayout>
 
@@ -192,7 +218,74 @@
 
     </LinearLayout>
 
-    <!-- Google Drive Signature Floating Control Pill Bar (Bottom Center Overlay) -->
+    <!-- Floating Scroll Stick Pill (Right Edge - Matching Screenshot 2) -->
+    <LinearLayout
+        android:id="@+id/layoutVerticalScrollPill"
+        android:layout_width="44dp"
+        android:layout_height="72dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_vertical_scroll_pill"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="Scroll up"
+            android:src="@drawable/ic_arrow_up_small"
+            app:tint="#FFFFFF" />
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="4dp"
+            android:contentDescription="Scroll down"
+            android:src="@drawable/ic_arrow_down_small"
+            app:tint="#FFFFFF" />
+
+    </LinearLayout>
+
+    <!-- Bottom Left Page Counter Badge Pill (Matching Screenshot 2) -->
+    <LinearLayout
+        android:id="@+id/layoutPageCounterPill"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_bottom_page_counter_pill"
+        android:elevation="6dp"
+        android:gravity="center"
+        android:paddingHorizontal="14dp">
+
+        <TextView
+            android:id="@+id/tvPageBadgeCounter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1/1"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Bottom Right Floating Pencil FAB (Matching Screenshot 2) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabEditDocument"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:contentDescription="Edit document"
+        android:src="@drawable/ic_pencil"
+        app:backgroundTint="#FF3B30"
+        app:fabSize="normal"
+        app:tint="#FFFFFF" />
+
+    <!-- Google Drive Control Pill Bar (Hidden by default, used for zoom/grid) -->
     <LinearLayout
         android:id="@+id/cardBottomControls"
         android:layout_width="wrap_content"
@@ -203,7 +296,8 @@
         android:elevation="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="8dp">
+        android:paddingHorizontal="8dp"
+        android:visibility="gone">
 
         <ImageButton
             android:id="@+id/btnBottomGrid"
@@ -224,7 +318,6 @@
             android:src="@drawable/ic_chevron_left"
             app:tint="#E3E2E6" />
 
-        <!-- Floating Page Indicator Pill (Tap to Jump) -->
         <TextView
             android:id="@+id/tvReaderPageIndicator"
             android:layout_width="wrap_content"
@@ -268,7 +361,7 @@
 
     </LinearLayout>
 
-    <!-- Google Drive Draw & Edit Markup Toolbar Overlay (Hidden by default, shown in Edit Mode) -->
+    <!-- Draw & Edit Markup Toolbar Overlay -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardEditControls"
         android:layout_width="match_parent"
@@ -288,7 +381,6 @@
             android:paddingTop="10dp"
             android:paddingBottom="12dp">
 
-            <!-- Scrollable Tools Toolbar Strip -->
             <HorizontalScrollView
                 android:id="@+id/scrollEditTools"
                 android:layout_width="match_parent"
@@ -302,7 +394,6 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- Drawing Tools -->
                     <ImageButton
                         android:id="@+id/btnToolPen"
                         android:layout_width="38dp"
@@ -338,7 +429,6 @@
                         android:layout_marginHorizontal="8dp"
                         android:background="#3C4043" />
 
-                    <!-- Color Options -->
                     <View
                         android:id="@+id/btnColorRed"
                         android:layout_width="26dp"
@@ -379,7 +469,6 @@
                         android:layout_marginHorizontal="8dp"
                         android:background="#3C4043" />
 
-                    <!-- Stroke Actions -->
                     <ImageButton
                         android:id="@+id/btnUndoDraw"
                         android:layout_width="36dp"
@@ -419,7 +508,6 @@
                 android:layout_marginVertical="6dp"
                 android:background="#3C4043" />
 
-            <!-- Dedicated Action Row (Exit/Close and Save) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -464,18 +552,18 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Floating Toggle Tools Button (Restores controls when hidden in immersive reading) -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabToggleTools"
+    <!-- Zoom Toast Readout -->
+    <TextView
+        android:id="@+id/tvZoomToast"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:contentDescription="Restore controls"
-        android:src="@drawable/ic_grid_view"
-        android:visibility="gone"
-        app:backgroundTint="#2D2F31"
-        app:fabSize="mini"
-        app:tint="#A8C7FA" />
+        android:layout_gravity="center"
+        android:background="@drawable/bg_rounded_toast"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
