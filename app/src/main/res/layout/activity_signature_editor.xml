@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:orientation="vertical">
+
+    <!-- Top Toolbar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarEditor"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/primary"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:title="Place Your Signature"
+        app:titleTextColor="@color/white" />
+
+    <!-- Center: Large PDF Page Preview with Interactive Signature Overlay -->
+    <FrameLayout
+        android:id="@+id/layoutPdfPreviewFrame"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#121212">
+
+        <ImageView
+            android:id="@+id/ivPdfPagePreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="PDF Page Preview"
+            android:scaleType="fitCenter" />
+
+        <ImageView
+            android:id="@+id/ivInteractiveSignatureOverlay"
+            android:layout_width="120dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_rounded_toast"
+            android:backgroundTint="#268B5CF6"
+            android:contentDescription="Signature Overlay"
+            android:padding="2dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- Bottom Controls Panel -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/surface_light"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Page Navigation & Helper Text -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrevPageSign"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Prev Page"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="8dp" />
+
+            <TextView
+                android:id="@+id/tvPageNumSign"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Page 1 of 1"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextPageSign"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Next Page"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Drag signature onto PDF page to position"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <!-- Rotation Control with Live Angle Readout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvRotateLabel"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Rotate: 0°"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRotateCCW"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="↶ 15°"
+                android:textColor="#8B5CF6"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRotateCW"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="15° ↷"
+                android:textColor="#8B5CF6"
+                android:textSize="12sp" />
+
+            <SeekBar
+                android:id="@+id/seekBarSigRotate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="360"
+                android:progress="0"
+                android:progressTint="#8B5CF6"
+                android:thumbTint="#8B5CF6" />
+
+        </LinearLayout>
+
+        <!-- Percentage Size Control with Live Readout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvSizeLabel"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Size: 100%"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <SeekBar
+                android:id="@+id/seekBarSigWidth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:max="250"
+                android:progress="120"
+                android:progressTint="#8B5CF6"
+                android:thumbTint="#8B5CF6" />
+
+        </LinearLayout>
+
+        <!-- Apply Signature Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnApplySignature"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/btn_apply_sig"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            app:backgroundTint="#10B981"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
