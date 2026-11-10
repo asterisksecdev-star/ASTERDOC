@@ -28,7 +28,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.asterdoc.app.R;
-import com.asterdoc.app.billing.BillingManager;
 import com.asterdoc.app.data.DocumentItem;
 import com.asterdoc.app.data.DocumentRepository;
 import com.asterdoc.app.pdf.PdfProcessor;
@@ -74,7 +73,6 @@ public class ToolActionActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private File generatedFile;
-    private String ocrRecognizedText = null;
 
     private Uri cameraImageUri;
 
@@ -298,17 +296,10 @@ public class ToolActionActivity extends AppCompatActivity {
                     btnCaptureCamera.setText(getString(R.string.capture_camera));
                 }
                 break;
-            case "PDF_WORD":
-                tvToolDescSub.setText(getString(R.string.tool_pdf_word_sub));
-                btnSelectFiles.setText(getString(R.string.btn_select_pdf));
-                break;
+
             case "WORD_PDF":
                 tvToolDescSub.setText(getString(R.string.tool_word_pdf_sub));
                 btnSelectFiles.setText(getString(R.string.btn_select_word));
-                break;
-            case "COMPRESS":
-                tvToolDescSub.setText(getString(R.string.tool_compress_sub));
-                btnSelectFiles.setText(getString(R.string.btn_select_pdf));
                 break;
             case "MERGE":
                 tvToolDescSub.setText(getString(R.string.tool_merge_sub));
@@ -324,30 +315,16 @@ public class ToolActionActivity extends AppCompatActivity {
                 tvToolDescSub.setText(getString(R.string.tool_images_pdf_sub));
                 btnSelectFiles.setText(getString(R.string.btn_select_images));
                 break;
-            case "OCR":
-                tvToolDescSub.setText(getString(R.string.tool_ocr_sub));
-                btnSelectFiles.setText(getString(R.string.ocr_select_file));
-                break;
             case "EXCEL_PDF":
                 tvToolDescSub.setText(getString(R.string.tool_excel_pdf_sub));
                 btnSelectFiles.setText(getString(R.string.btn_select_excel));
-                break;
-            case "PDF_EXCEL":
-                tvToolDescSub.setText(getString(R.string.tool_pdf_excel_sub));
-                btnSelectFiles.setText(getString(R.string.btn_select_pdf));
                 break;
         }
     }
 
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        if ("IMAGES_PDF".equals(toolType) || "SCAN".equals(toolType) || "OCR".equals(toolType)) {
-            intent.setType("*/*");
-        } else if ("WORD_PDF".equals(toolType)) {
-            intent.setType("*/*");
-        } else {
-            intent.setType("application/pdf");
-        }
+        intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, "MERGE".equals(toolType) || "IMAGES_PDF".equals(toolType));
         filePickerLauncher.launch(Intent.createChooser(intent, "Select Input File"));
     }
@@ -418,48 +395,7 @@ public class ToolActionActivity extends AppCompatActivity {
                         }
                         generatedFile = PdfProcessor.splitPdf(this, splitInput, startPage, endPage, "Pages_" + startPage + "-" + endPage + ".pdf");
                         break;
-                    case "COMPRESS":
-                        File compressInput = copyUriToTempFile(selectedUris.get(0));
-                        final long origBytes = compressInput != null && compressInput.exists() ? compressInput.length() : 0;
-                        generatedFile = PdfProcessor.compressPdf(this, compressInput, "Compressed_Document.pdf");
-                        final long compBytes = generatedFile.length();
 
-                        if (generatedFile != null) {
-                            DocumentItem item = new DocumentItem(
-                                    String.valueOf(System.currentTimeMillis()),
-                                    generatedFile.getName(),
-                                    generatedFile.getAbsolutePath(),
-                                    "PDF",
-                                    generatedFile.length(),
-                                    System.currentTimeMillis(),
-                                    "Created"
-                            );
-                            DocumentRepository.getInstance(this).addDocument(item);
-
-                            mainHandler.post(() -> {
-                                llProgressContainer.setVisibility(View.GONE);
-                                btnExecuteTool.setEnabled(true);
-                                cardResultContainer.setVisibility(View.VISIBLE);
-                                btnOpenResult.setText("Open");
-
-                                if (origBytes > 0 && compBytes < origBytes) {
-                                    long saved = origBytes - compBytes;
-                                    int percent = (int) Math.round(((double) saved / origBytes) * 100);
-                                    tvResultDetails.setText("Original: " + formatFileSize(origBytes) +
-                                            "\nCompressed: " + formatFileSize(compBytes) +
-                                            "\nSaved: " + percent + "%\nFile: " + generatedFile.getName() + "\n\nAuto-saved to Documents/AsterDocs");
-                                } else {
-                                    tvResultDetails.setText("This document is already optimized or cannot be reduced further without affecting quality.\nOriginal Size: " + formatFileSize(origBytes > 0 ? origBytes : compBytes) +
-                                            "\nFile: " + generatedFile.getName() + "\n\nAuto-saved to Documents/AsterDocs");
-                                }
-                            });
-                            return;
-                        }
-                        break;
-                    case "PDF_WORD":
-                        File pdfWordInput = copyUriToTempFile(selectedUris.get(0));
-                        generatedFile = PdfProcessor.pdfToWord(this, pdfWordInput, "Converted Document Content from PDF", "Converted_Document.docx");
-                        break;
                     case "WORD_PDF":
                         File wordInput = copyUriToTempFile(selectedUris.get(0));
                         generatedFile = PdfProcessor.wordToPdf(this, wordInput, "Converted_Word_Document.pdf");
@@ -468,53 +404,6 @@ public class ToolActionActivity extends AppCompatActivity {
                         File excelInput = copyUriToTempFile(selectedUris.get(0));
                         generatedFile = PdfProcessor.excelToPdf(this, excelInput, "Converted_Spreadsheet.pdf");
                         break;
-                    case "PDF_EXCEL":
-                        File pdfExcelInput = copyUriToTempFile(selectedUris.get(0));
-                        generatedFile = PdfProcessor.pdfToExcel(this, pdfExcelInput, "Converted Spreadsheet Content from PDF", "Converted_Spreadsheet.xlsx");
-                        break;
-                    case "OCR":
-                        PdfProcessor.performOcrForFile(this, selectedUris.get(0), new PdfProcessor.OcrCallback() {
-                            @Override
-                            public void onSuccess(String recognizedText) {
-                                ocrRecognizedText = recognizedText;
-                                try {
-                                    File ocrFile = new File(PdfProcessor.getAsterDocsDirectory(), "OCR_Notes_" + System.currentTimeMillis() + ".txt");
-                                    FileOutputStream fos = new FileOutputStream(ocrFile);
-                                    fos.write(recognizedText.getBytes(StandardCharsets.UTF_8));
-                                    fos.close();
-                                    generatedFile = ocrFile;
-
-                                    DocumentItem item = new DocumentItem(
-                                            String.valueOf(System.currentTimeMillis()),
-                                            ocrFile.getName(),
-                                            ocrFile.getAbsolutePath(),
-                                            "TXT",
-                                            ocrFile.length(),
-                                            System.currentTimeMillis(),
-                                            "Created"
-                                    );
-                                    DocumentRepository.getInstance(ToolActionActivity.this).addDocument(item);
-                                } catch (Exception ignored) {}
-
-                                mainHandler.post(() -> {
-                                    llProgressContainer.setVisibility(View.GONE);
-                                    btnExecuteTool.setEnabled(true);
-                                    cardResultContainer.setVisibility(View.VISIBLE);
-                                    tvResultDetails.setText("Recognized Text (Auto-saved to Documents/AsterDocs):\n\n" + recognizedText);
-                                    btnOpenResult.setText("Copy Text");
-                                });
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                mainHandler.post(() -> {
-                                    llProgressContainer.setVisibility(View.GONE);
-                                    btnExecuteTool.setEnabled(true);
-                                    Toast.makeText(ToolActionActivity.this, "OCR Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                            }
-                        });
-                        return;
                 }
 
                 if (generatedFile != null) {
@@ -534,12 +423,7 @@ public class ToolActionActivity extends AppCompatActivity {
                         btnExecuteTool.setEnabled(true);
                         cardResultContainer.setVisibility(View.VISIBLE);
                         btnOpenResult.setText("Open");
-
-                        if ("COMPRESS".equals(toolType)) {
-                            tvResultDetails.setText("Original: 12.4 MB\nCompressed: 4.8 MB\nSaved: 61%\nFile: " + generatedFile.getName() + "\n\nAuto-saved to Documents/AsterDocs");
-                        } else {
-                            tvResultDetails.setText("Output File: " + generatedFile.getName() + "\nSize: " + item.getFormattedSize() + "\n\nAuto-saved to Documents/AsterDocs");
-                        }
+                        tvResultDetails.setText("Output File: " + generatedFile.getName() + "\nSize: " + item.getFormattedSize() + "\n\nAuto-saved to Documents/AsterDocs");
                     });
                 }
             } catch (Exception e) {
@@ -587,14 +471,6 @@ public class ToolActionActivity extends AppCompatActivity {
     }
 
     private void openGeneratedFile() {
-        if ("OCR".equals(toolType) && ocrRecognizedText != null) {
-            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("OCR Text", ocrRecognizedText);
-            clipboard.setPrimaryClip(clip);
-            BrandedToast.show(this, getString(R.string.msg_ocr_copied));
-            return;
-        }
-
         if (generatedFile != null && generatedFile.exists()) {
             if (generatedFile.getName().endsWith(".pdf")) {
                 Intent intent = new Intent(this, PdfViewerActivity.class);
@@ -607,14 +483,6 @@ public class ToolActionActivity extends AppCompatActivity {
     }
 
     private void shareGeneratedFile() {
-        if ("OCR".equals(toolType) && ocrRecognizedText != null) {
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TEXT, ocrRecognizedText);
-            startActivity(Intent.createChooser(intent, "Share OCR Text"));
-            return;
-        }
-
         if (generatedFile != null && generatedFile.exists()) {
             Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", generatedFile);
             Intent intent = new Intent(Intent.ACTION_SEND);
@@ -638,3 +506,4 @@ public class ToolActionActivity extends AppCompatActivity {
         executor.shutdown();
     }
 }
+

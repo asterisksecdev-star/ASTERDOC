@@ -1,9 +1,10 @@
 package com.asterdoc.app.ui.viewer;
-
+import android.util.Log;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -14,22 +15,35 @@ import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.asterdoc.app.R;
+import com.asterdoc.app.data.DocumentItem;
+import com.asterdoc.app.data.DocumentRepository;
+import com.asterdoc.app.pdf.PdfProcessor;
+import com.asterdoc.app.ui.tools.ToolActionActivity;
+import com.asterdoc.app.ui.tools.sign.SignPdfActivity;
+import com.asterdoc.app.util.LocaleHelper;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -39,19 +53,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.asterdoc.app.R;
-import com.asterdoc.app.data.DocumentItem;
-import com.asterdoc.app.data.DocumentRepository;
-import com.asterdoc.app.pdf.PdfProcessor;
-import com.asterdoc.app.ui.tools.ToolActionActivity;
-import com.asterdoc.app.ui.tools.sign.SignPdfActivity;
-import com.asterdoc.app.util.LocaleHelper;
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -69,13 +70,13 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private LinearLayoutManager layoutManager;
 
     private View layoutTopBarContainer;
-    private MaterialToolbar toolbarPdfViewer;
-    private LinearLayout layoutSearchBar;
-    private EditText etSearchQuery;
-    private TextView tvSearchMatchCount;
-    private ImageButton btnCloseSearch;
-    private ImageButton btnSearchPrev;
-    private ImageButton btnSearchNext;
+    private View btnTopBack, btnTopRotate, btnTopInfo, btnTopShare, btnTopMenu;
+
+    private LinearLayout layoutVerticalScrollPill;
+    private LinearLayout layoutPageCounterPill;
+    private TextView tvPageBadgeCounter;
+
+    private View fabEditDocument;
 
     private LinearLayout cardBottomControls;
     private ImageButton btnBottomGrid;
@@ -84,32 +85,34 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private ImageButton btnNextPage;
     private ImageButton btnZoomOut;
     private ImageButton btnZoomIn;
+    private ImageButton btnInvertColor;
 
     private MaterialCardView cardEditControls;
     private ImageButton btnToolPen;
     private ImageButton btnToolHighlighter;
     private ImageButton btnToolEraser;
     private View btnColorRed, btnColorBlue, btnColorBlack, btnColorGreen, btnColorYellow;
-    private ImageButton btnUndoDraw, btnRedoDraw, btnClearDraw;
+    private ImageView btnUndoDraw, btnRedoDraw, btnClearDraw;
     private View btnCancelEditMode, btnDoneEditMode;
 
     private FloatingActionButton fabToggleTools;
 
-    private Chip chipConvertToWord;
-    private Chip chipCompressPdf;
-    private Chip chipSignPdf;
-    private Chip chipOcrText;
+    private TextView tvZoomToast;
+    private Runnable zoomToastRunnable;
+
+    private File sourceWordFile = null;
 
     private boolean isUiVisible = true;
     private boolean isEditMode = false;
     private int selectedColor = Color.RED;
     private DrawingCanvasView.ToolMode selectedTool = DrawingCanvasView.ToolMode.PEN;
 
-    private final Handler handler = new Handler(Looper.getMainLooper());
-    private final ExecutorService searchExecutor = Executors.newSingleThreadExecutor();
+    private int currentOrientationMode = 0; // 0: Portrait, 1: Landscape, 2: Auto
 
-    private final List<Integer> searchMatchingPages = new ArrayList<>();
-    private int currentSearchIndex = -1;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private final Handler autoHideHandler = new Handler(Looper.getMainLooper());
+    private final Runnable autoHideRunnable = this::hideFloatingControlsWithAnimation;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -169,10 +172,65 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         }
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        showFloatingControlsAndResetTimer();
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private void showFloatingControlsAndResetTimer() {
+        if (isEditMode) return;
+        autoHideHandler.removeCallbacks(autoHideRunnable);
+
+        if (layoutVerticalScrollPill != null) {
+            if (layoutVerticalScrollPill.getVisibility() != View.VISIBLE) {
+                layoutVerticalScrollPill.setVisibility(View.VISIBLE);
+            }
+            layoutVerticalScrollPill.animate().cancel();
+            layoutVerticalScrollPill.setAlpha(1.0f);
+        }
+        if (fabEditDocument != null) {
+            if (fabEditDocument.getVisibility() != View.VISIBLE) {
+                fabEditDocument.setVisibility(View.VISIBLE);
+            }
+            fabEditDocument.animate().cancel();
+            fabEditDocument.setAlpha(1.0f);
+        }
+        if (layoutPageCounterPill != null) {
+            if (layoutPageCounterPill.getVisibility() != View.VISIBLE) {
+                layoutPageCounterPill.setVisibility(View.VISIBLE);
+            }
+            layoutPageCounterPill.animate().cancel();
+            layoutPageCounterPill.setAlpha(1.0f);
+        }
+
+        autoHideHandler.postDelayed(autoHideRunnable, 1000);
+    }
+
+    private void hideFloatingControlsWithAnimation() {
+        if (isEditMode) return;
+
+        if (layoutVerticalScrollPill != null && layoutVerticalScrollPill.getVisibility() == View.VISIBLE) {
+            layoutVerticalScrollPill.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                if (layoutVerticalScrollPill != null) layoutVerticalScrollPill.setVisibility(View.GONE);
+            }).start();
+        }
+        if (fabEditDocument != null && fabEditDocument.getVisibility() == View.VISIBLE) {
+            fabEditDocument.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                if (fabEditDocument != null) fabEditDocument.setVisibility(View.GONE);
+            }).start();
+        }
+        if (layoutPageCounterPill != null && layoutPageCounterPill.getVisibility() == View.VISIBLE) {
+            layoutPageCounterPill.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                if (layoutPageCounterPill != null) layoutPageCounterPill.setVisibility(View.GONE);
+            }).start();
+        }
+    }
+
     private void processAndLoadFile(File file, boolean isFromUri) {
         ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setIcon(R.mipmap.ic_launcher);
-        progressDialog.setTitle("AsterDocs");
+        progressDialog.setIcon(R.drawable.asterine_logo_image);
+        progressDialog.setTitle("Asterine Reader");
         progressDialog.setMessage("Loading and rendering document...");
         progressDialog.setCancelable(false);
         progressDialog.show();
@@ -181,8 +239,19 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             try {
                 File processed = file;
                 String name = file.getName().toLowerCase();
-                if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
-                    processed = PdfProcessor.wordToPdf(this, file, file.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
+                if (name.endsWith(".docx") || name.endsWith(".doc")) {
+                    sourceWordFile = file;
+                    processed = PdfProcessor.wordToPdf(
+                            this,
+                            file,
+                            file.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf"
+                    );
+                } else if (name.endsWith(".rtf")) {
+                    // Route to a dedicated RTF converter.
+                    throw new IllegalArgumentException("RTF requires its own document converter.");
+                } else if (name.endsWith(".odt")) {
+                    // Route to a dedicated ODT converter.
+                    throw new IllegalArgumentException("ODT requires its own document converter.");
                 } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp")) {
                     processed = PdfProcessor.pptxToPdf(this, file, file.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                 } else if (name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
@@ -217,12 +286,22 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
                     setupReaderView();
                     setupEditControls();
                     setFullscreenMode(false);
+                    showFloatingControlsAndResetTimer();
                 });
             } catch (Exception e) {
+                Log.e("PdfViewerActivity", "Document processing failed", e);
+
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
-                    Toast.makeText(this, "Error opening document: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    finish();
+
+                    Toast.makeText(
+                            this,
+                            "Could not process this document. The original file has not been changed.",
+                            Toast.LENGTH_LONG
+                    ).show();
+
+                    // Keep the reader open rather than closing the activity.
+                    // Do not load an empty or corrupted PDF.
                 });
             }
         }).start();
@@ -230,7 +309,17 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
     private void initViews() {
         layoutTopBarContainer = findViewById(R.id.layoutTopBarContainer);
-        toolbarPdfViewer = findViewById(R.id.toolbarPdfViewer);
+        btnTopBack = findViewById(R.id.btnTopBack);
+        btnTopRotate = findViewById(R.id.btnTopRotate);
+        btnTopInfo = findViewById(R.id.btnTopInfo);
+        btnTopShare = findViewById(R.id.btnTopShare);
+        btnTopMenu = findViewById(R.id.btnTopMenu);
+
+        layoutVerticalScrollPill = findViewById(R.id.layoutVerticalScrollPill);
+        layoutPageCounterPill = findViewById(R.id.layoutPageCounterPill);
+        tvPageBadgeCounter = findViewById(R.id.tvPageBadgeCounter);
+
+        fabEditDocument = findViewById(R.id.fabEditDocument);
 
         cardBottomControls = findViewById(R.id.cardBottomControls);
         btnBottomGrid = findViewById(R.id.btnBottomGrid);
@@ -239,6 +328,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         btnNextPage = findViewById(R.id.btnNextPage);
         btnZoomOut = findViewById(R.id.btnZoomOut);
         btnZoomIn = findViewById(R.id.btnZoomIn);
+        btnInvertColor = findViewById(R.id.btnInvertColor);
 
         cardEditControls = findViewById(R.id.cardEditControls);
         btnToolPen = findViewById(R.id.btnToolPen);
@@ -256,15 +346,10 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         btnDoneEditMode = findViewById(R.id.btnDoneEditMode);
 
         fabToggleTools = findViewById(R.id.fabToggleTools);
-
-        chipConvertToWord = findViewById(R.id.chipConvertToWord);
-        chipCompressPdf = findViewById(R.id.chipCompressPdf);
-        chipSignPdf = findViewById(R.id.chipSignPdf);
-        chipOcrText = findViewById(R.id.chipOcrText);
+        tvZoomToast = findViewById(R.id.tvZoomToast);
 
         rvPdfPages = findViewById(R.id.rvPdfPages);
 
-        // Apply Window Insets so all controls remain visible & reachable on all screen sizes & navigation bar setups
         ViewCompat.setOnApplyWindowInsetsListener(layoutTopBarContainer, (v, insets) -> {
             Insets statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             v.setPadding(v.getPaddingLeft(), statusBars.top, v.getPaddingRight(), v.getPaddingBottom());
@@ -276,14 +361,26 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), navBars.bottom + dpToPx(12));
             return insets;
         });
+    }
 
-        ViewCompat.setOnApplyWindowInsetsListener(cardBottomControls, (v, insets) -> {
-            Insets navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
-            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) v.getLayoutParams();
-            params.bottomMargin = navBars.bottom + dpToPx(24);
-            v.setLayoutParams(params);
-            return insets;
-        });
+    private void showZoomToast(float zoomScale) {
+        if (tvZoomToast == null) return;
+        int pct = Math.round(zoomScale * 100);
+        tvZoomToast.setText(pct + "%");
+        tvZoomToast.setVisibility(View.VISIBLE);
+
+        if (zoomToastRunnable != null) {
+            handler.removeCallbacks(zoomToastRunnable);
+        }
+        zoomToastRunnable = () -> {
+            if (tvZoomToast != null) {
+                tvZoomToast.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+                    tvZoomToast.setVisibility(View.GONE);
+                    tvZoomToast.setAlpha(1.0f);
+                }).start();
+            }
+        };
+        handler.postDelayed(zoomToastRunnable, 1200);
     }
 
     private int dpToPx(int dp) {
@@ -291,53 +388,42 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     }
 
     private void setupToolbar() {
-        toolbarPdfViewer.setTitle(pdfFile.getName());
-        toolbarPdfViewer.setNavigationOnClickListener(v -> finish());
-        toolbarPdfViewer.inflateMenu(R.menu.menu_pdf_viewer);
-        toolbarPdfViewer.setOnMenuItemClickListener(item -> {
+        if (btnTopBack != null) btnTopBack.setOnClickListener(v -> finish());
+        if (btnTopRotate != null) btnTopRotate.setOnClickListener(v -> toggleScreenOrientation());
+        if (btnTopInfo != null) btnTopInfo.setOnClickListener(v -> showDocumentDetails());
+        if (btnTopShare != null) btnTopShare.setOnClickListener(v -> shareFile());
+        if (btnTopMenu != null) btnTopMenu.setOnClickListener(this::showPopupMenu);
+    }
+
+    private void showPopupMenu(View view) {
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, view);
+        popup.getMenu().add(0, 101, 0, "Go to Page");
+        popup.getMenu().add(0, 102, 1, "Page Overview");
+        popup.getMenu().add(0, 104, 2, "Sign PDF");
+
+        popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.action_edit_mode) {
-                enterEditMode();
+            if (id == 101) {
+                showGotoPageDialog();
                 return true;
-            } else if (id == R.id.action_grid_view) {
+            } else if (id == 102) {
                 showThumbnailGrid();
                 return true;
-            } else if (id == R.id.action_share) {
-                shareFile();
-                return true;
-            } else if (id == R.id.action_doc_info) {
-                showDocumentDetails();
-                return true;
-            } else if (id == R.id.action_convert_word) {
-                openToolForCurrentDoc("PDF_WORD", "PDF2Word");
-                return true;
-            } else if (id == R.id.action_compress) {
-                openToolForCurrentDoc("COMPRESS", "Compress PDF");
-                return true;
-            } else if (id == R.id.action_sign) {
+            } else if (id == 104) {
                 openToolForCurrentDoc("SIGN", "Sign PDF");
-                return true;
-            } else if (id == R.id.action_ocr) {
-                openToolForCurrentDoc("OCR", "OCR Text");
                 return true;
             }
             return false;
         });
+        popup.show();
     }
 
     private void scrollToPage(int pageIndex) {
         int totalPages = pageAdapter.getItemCount();
         if (pageIndex < 0 || pageIndex >= totalPages) return;
-
-        RecyclerView.SmoothScroller smoothScroller = new LinearSmoothScroller(this) {
-            @Override
-            protected int getVerticalSnapPreference() {
-                return LinearSmoothScroller.SNAP_TO_START;
-            }
-        };
-        smoothScroller.setTargetPosition(pageIndex);
         if (layoutManager != null) {
-            layoutManager.startSmoothScroll(smoothScroller);
+            layoutManager.scrollToPositionWithOffset(pageIndex, 0);
+            updatePageIndicator();
         }
     }
 
@@ -349,14 +435,90 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         rvPdfPages.setAdapter(pageAdapter);
 
         updatePageIndicator();
+        rvPdfPages.post(this::updateVerticalScrollPillPosition);
 
         rvPdfPages.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 updatePageIndicator();
+                updateVerticalScrollPillPosition();
+                showFloatingControlsAndResetTimer();
             }
         });
+
+        if (layoutVerticalScrollPill != null) {
+            layoutVerticalScrollPill.setOnTouchListener(new View.OnTouchListener() {
+                private float startRawY;
+                private float startTranslationY;
+                private boolean isDragging = false;
+
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    showFloatingControlsAndResetTimer();
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            startRawY = event.getRawY();
+                            startTranslationY = v.getTranslationY();
+                            isDragging = false;
+                            return true;
+
+                        case MotionEvent.ACTION_MOVE:
+                            float deltaY = event.getRawY() - startRawY;
+                            if (Math.abs(deltaY) > 6) {
+                                isDragging = true;
+                            }
+                            if (isDragging && rvPdfPages != null && pageAdapter != null) {
+                                int parentHeight = rvPdfPages.getHeight();
+                                int pillHeight = v.getHeight();
+                                float maxTravel = parentHeight - pillHeight - dpToPx(140);
+                                if (maxTravel > 0) {
+                                    float newTranslationY = Math.max(0f, Math.min(maxTravel, startTranslationY + deltaY));
+                                    v.setTranslationY(newTranslationY);
+
+                                    float fraction = newTranslationY / maxTravel;
+                                    int totalPages = pageAdapter.getItemCount();
+                                    if (totalPages > 0) {
+                                        int targetPage = Math.min(totalPages - 1, Math.max(0, Math.round(fraction * (totalPages - 1))));
+                                        if (layoutManager != null) {
+                                            layoutManager.scrollToPositionWithOffset(targetPage, 0);
+                                        }
+                                        updatePageIndicator();
+                                    }
+                                }
+                            }
+                            return true;
+
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            if (!isDragging) {
+                                v.performClick();
+                                float touchY = event.getY();
+                                if (touchY < v.getHeight() / 2f) {
+                                    int currentPos = layoutManager.findFirstVisibleItemPosition();
+                                    if (currentPos > 0) scrollToPage(currentPos - 1);
+                                } else {
+                                    int currentPos = layoutManager.findFirstVisibleItemPosition();
+                                    if (currentPos < pageAdapter.getItemCount() - 1) scrollToPage(currentPos + 1);
+                                }
+                            }
+                            return true;
+                    }
+                    return false;
+                }
+            });
+        }
+
+        if (layoutPageCounterPill != null) {
+            layoutPageCounterPill.setOnClickListener(v -> showGotoPageDialog());
+        }
+        if (tvPageBadgeCounter != null) {
+            tvPageBadgeCounter.setOnClickListener(v -> showGotoPageDialog());
+        }
+
+        if (fabEditDocument != null) {
+            fabEditDocument.setOnClickListener(v -> enterEditMode());
+        }
 
         btnBottomGrid.setOnClickListener(v -> showThumbnailGrid());
 
@@ -376,28 +538,57 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             }
         });
 
+
+
         btnZoomOut.setOnClickListener(v -> {
-            int pos = layoutManager.findFirstVisibleItemPosition();
-            RecyclerView.ViewHolder holder = rvPdfPages.findViewHolderForAdapterPosition(pos);
-            if (holder instanceof PdfPageAdapter.PageViewHolder) {
-                ((PdfPageAdapter.PageViewHolder) holder).ivPdfPage.zoomOut();
+            if (pageAdapter != null) {
+                float newScale = Math.max(1.0f, pageAdapter.getGlobalZoomScale() / 1.4f);
+                pageAdapter.setGlobalZoomScale(newScale);
+                showZoomToast(newScale);
             }
         });
 
         btnZoomIn.setOnClickListener(v -> {
-            int pos = layoutManager.findFirstVisibleItemPosition();
-            RecyclerView.ViewHolder holder = rvPdfPages.findViewHolderForAdapterPosition(pos);
-            if (holder instanceof PdfPageAdapter.PageViewHolder) {
-                ((PdfPageAdapter.PageViewHolder) holder).ivPdfPage.zoomIn();
+            if (pageAdapter != null) {
+                float newScale = Math.min(5.0f, pageAdapter.getGlobalZoomScale() * 1.4f);
+                pageAdapter.setGlobalZoomScale(newScale);
+                showZoomToast(newScale);
             }
         });
 
         fabToggleTools.setOnClickListener(v -> onPageClick());
+    }
 
-        chipConvertToWord.setOnClickListener(v -> openToolForCurrentDoc("PDF_WORD", "PDF2Word"));
-        chipCompressPdf.setOnClickListener(v -> openToolForCurrentDoc("COMPRESS", "Compress PDF"));
-        chipSignPdf.setOnClickListener(v -> openToolForCurrentDoc("SIGN", "Sign PDF"));
-        chipOcrText.setOnClickListener(v -> openToolForCurrentDoc("OCR", "OCR Text"));
+    private void updateVerticalScrollPillPosition() {
+        if (layoutVerticalScrollPill == null || rvPdfPages == null) return;
+        int scrollRange = rvPdfPages.computeVerticalScrollRange() - rvPdfPages.computeVerticalScrollExtent();
+        if (scrollRange > 0) {
+            int scrollOffset = rvPdfPages.computeVerticalScrollOffset();
+            float scrollFraction = Math.max(0f, Math.min(1f, (float) scrollOffset / scrollRange));
+
+            int parentHeight = rvPdfPages.getHeight();
+            int pillHeight = layoutVerticalScrollPill.getHeight();
+            if (parentHeight > 0 && pillHeight > 0) {
+                float maxTravel = parentHeight - pillHeight - dpToPx(140);
+                if (maxTravel > 0) {
+                    layoutVerticalScrollPill.setTranslationY(scrollFraction * maxTravel);
+                }
+            }
+        }
+    }
+
+    private void toggleScreenOrientation() {
+        currentOrientationMode = (currentOrientationMode + 1) % 3;
+        if (currentOrientationMode == 1) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            Toast.makeText(this, "Landscape Mode", Toast.LENGTH_SHORT).show();
+        } else if (currentOrientationMode == 2) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            Toast.makeText(this, "Auto-Rotate Mode", Toast.LENGTH_SHORT).show();
+        } else {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            Toast.makeText(this, "Portrait Mode", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupEditControls() {
@@ -520,8 +711,12 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
     private void enterEditMode() {
         isEditMode = true;
-        cardBottomControls.setVisibility(View.GONE);
-        cardEditControls.setVisibility(View.VISIBLE);
+        autoHideHandler.removeCallbacks(autoHideRunnable);
+        if (layoutVerticalScrollPill != null) layoutVerticalScrollPill.setVisibility(View.GONE);
+        if (layoutPageCounterPill != null) layoutPageCounterPill.setVisibility(View.GONE);
+        if (fabEditDocument != null) fabEditDocument.setVisibility(View.GONE);
+        if (cardBottomControls != null) cardBottomControls.setVisibility(View.GONE);
+        if (cardEditControls != null) cardEditControls.setVisibility(View.VISIBLE);
         selectedTool = DrawingCanvasView.ToolMode.PEN;
         updateDrawingTool();
         Toast.makeText(this, "Draw & Edit Mode Activated. Draw on any page!", Toast.LENGTH_SHORT).show();
@@ -529,8 +724,8 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
     private void exitEditMode() {
         isEditMode = false;
-        cardEditControls.setVisibility(View.GONE);
-        cardBottomControls.setVisibility(View.VISIBLE);
+        if (cardEditControls != null) cardEditControls.setVisibility(View.GONE);
+        showFloatingControlsAndResetTimer();
         pageAdapter.setDrawingTool(DrawingCanvasView.ToolMode.NONE, selectedColor, 8f);
     }
 
@@ -625,7 +820,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         String originalName = pdfFile != null ? pdfFile.getName() : "Document";
         String docType = "PDF Document";
         String lower = originalName.toLowerCase();
-        if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt") || lower.contains("_view.pdf")) {
+        if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt")) {
             docType = "Microsoft Word Document";
         } else if (lower.endsWith(".pptx") || lower.endsWith(".ppt") || lower.endsWith(".pps") || lower.endsWith(".odp")) {
             docType = "PowerPoint Presentation";
@@ -635,7 +830,8 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             docType = "Excel Spreadsheet";
         }
 
-        tvInfoFileName.setText(originalName.replace("_view.pdf", ".docx"));
+        String displayName = originalName.replaceFirst("_view\\.pdf$", "");
+        tvInfoFileName.setText(displayName);
         tvInfoFileSizePages.setText(docType + " • " + formatFileSize(pdfFile.length()) + " • " + pageAdapter.getItemCount() + " Pages");
         tvInfoFilePath.setText(pdfFile.getAbsolutePath());
 
@@ -681,13 +877,11 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     public void onPageClick() {
         if (isEditMode) return;
         isUiVisible = !isUiVisible;
-        int topBottomVisibility = isUiVisible ? View.VISIBLE : View.GONE;
-        int fabVisibility = isUiVisible ? View.GONE : View.VISIBLE;
+        int topBarVisibility = isUiVisible ? View.VISIBLE : View.GONE;
 
-        layoutTopBarContainer.setVisibility(topBottomVisibility);
-        cardBottomControls.setVisibility(topBottomVisibility);
-        fabToggleTools.setVisibility(fabVisibility);
+        if (layoutTopBarContainer != null) layoutTopBarContainer.setVisibility(topBarVisibility);
 
+        showFloatingControlsAndResetTimer();
         setFullscreenMode(!isUiVisible);
     }
 
@@ -757,10 +951,20 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     }
 
     private void updatePageIndicator() {
+        if (layoutManager == null || pageAdapter == null) return;
         int currentPos = layoutManager.findFirstVisibleItemPosition() + 1;
         int totalPages = pageAdapter.getItemCount();
         if (currentPos <= 0) currentPos = 1;
-        tvReaderPageIndicator.setText(currentPos + " / " + totalPages);
+
+        String formattedBadge = currentPos + "/" + totalPages;
+        String formattedPill = currentPos + " / " + totalPages;
+
+        if (tvPageBadgeCounter != null) {
+            tvPageBadgeCounter.setText(formattedBadge);
+        }
+        if (tvReaderPageIndicator != null) {
+            tvReaderPageIndicator.setText(formattedPill);
+        }
     }
 
     private void shareFile() {
@@ -787,6 +991,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        autoHideHandler.removeCallbacksAndMessages(null);
         handler.removeCallbacksAndMessages(null);
         if (pageAdapter != null) {
             pageAdapter.closeRenderer();

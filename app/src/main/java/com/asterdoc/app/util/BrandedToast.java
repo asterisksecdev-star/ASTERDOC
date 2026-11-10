@@ -18,7 +18,7 @@ public class BrandedToast {
             View layout = inflater.inflate(R.layout.toast_branded, null);
             ImageView imgLogo = layout.findViewById(R.id.toastLogo);
             TextView tvMessage = layout.findViewById(R.id.toastText);
-            if (imgLogo != null) imgLogo.setImageResource(R.mipmap.ic_launcher);
+            if (imgLogo != null) imgLogo.setImageResource(R.drawable.asterine_logo_image);
             if (tvMessage != null) tvMessage.setText(message);
 
             Toast toast = new Toast(context);
@@ -31,3 +31,4 @@ public class BrandedToast {
         }
     }
 }
+

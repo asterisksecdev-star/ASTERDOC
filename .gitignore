@@ -13,3 +13,47 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local configuration copies
+local.properties.txt
+gradle.properties.txt
+gradle/gradle-daemon-jvm.properties.txt
+gradle/wrapper/gradle-wrapper.properties.txt
+
+# IDE local migration state
+.idea/migrations.xml
+
+# Large crash dumps
+*.hprof
+java_pid*.hprof
+
+# Signing keys and certificates
+key
+*.jks
+*.keystore
+upload_certificate.pem
+
+# Generated release packages
+app/release/
+
+# Local configuration copies
+local.properties.txt
+gradle.properties.txt
+gradle/gradle-daemon-jvm.properties.txt
+gradle/wrapper/gradle-wrapper.properties.txt
+
+# IDE local migration state
+.idea/migrations.xml
+
+# Large crash dumps
+*.hprof
+java_pid*.hprof
+
+# Signing keys and certificates
+key
+*.jks
+*.keystore
+upload_certificate.pem
+
+# Generated release packages
+app/release/

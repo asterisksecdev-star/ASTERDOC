@@ -27,3 +27,4 @@ public class FaqActivity extends AppCompatActivity {
         }
     }
 }
+

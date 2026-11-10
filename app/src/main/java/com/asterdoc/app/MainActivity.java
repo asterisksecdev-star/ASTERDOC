@@ -16,15 +16,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.asterdoc.app.auth.AppLockService;
-import com.asterdoc.app.auth.AuthManager;
+import com.asterdoc.app.data.AsterineStorageManager;
 import com.asterdoc.app.data.DocumentItem;
 import com.asterdoc.app.data.DocumentRepository;
-import com.asterdoc.app.ui.auth.AuthActivity;
 import com.asterdoc.app.ui.files.FilesFragment;
 import com.asterdoc.app.ui.home.HomeFragment;
 import com.asterdoc.app.ui.onboarding.OnboardingActivity;
 import com.asterdoc.app.ui.settings.SettingsFragment;
-import com.asterdoc.app.ui.tools.ToolsFragment;
 import com.asterdoc.app.ui.viewer.ExcelViewerActivity;
 import com.asterdoc.app.ui.viewer.PdfViewerActivity;
 import com.asterdoc.app.util.LocaleHelper;
@@ -36,6 +34,11 @@ import java.io.InputStream;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
+
+    private Fragment homeFragment;
+    private Fragment filesFragment;
+    private Fragment settingsFragment;
+    private Fragment activeFragment;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -56,15 +59,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (AuthManager.getInstance(this).isSessionLocked()) {
-            Intent intent = new Intent(this, AuthActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            startActivity(intent);
-            overridePendingTransition(0, 0);
-            finish();
-            return;
-        }
-
         try {
             startService(new Intent(this, AppLockService.class));
         } catch (Exception ignored) {}
@@ -75,40 +69,53 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        com.asterdoc.app.ads.AdManager.loadBannerAd(this, findViewById(R.id.adContainerMain));
+
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigationView);
 
         if (savedInstanceState == null) {
+            homeFragment = new HomeFragment();
+            filesFragment = new FilesFragment();
+            settingsFragment = new SettingsFragment();
+
             getSupportFragmentManager().beginTransaction()
-                    .setCustomAnimations(R.anim.fade_in, R.anim.fade_out)
-                    .replace(R.id.fragmentContainer, new HomeFragment())
+                    .add(R.id.fragmentContainer, homeFragment, "HOME")
+                    .add(R.id.fragmentContainer, filesFragment, "FILES").hide(filesFragment)
+                    .add(R.id.fragmentContainer, settingsFragment, "SETTINGS").hide(settingsFragment)
                     .commit();
+            activeFragment = homeFragment;
+        } else {
+            homeFragment = getSupportFragmentManager().findFragmentByTag("HOME");
+            filesFragment = getSupportFragmentManager().findFragmentByTag("FILES");
+            settingsFragment = getSupportFragmentManager().findFragmentByTag("SETTINGS");
+            activeFragment = homeFragment;
         }
 
         bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
             int itemId = item.getItemId();
+            Fragment targetFragment = null;
 
             if (itemId == R.id.navigation_home) {
-                selectedFragment = new HomeFragment();
+                targetFragment = homeFragment;
             } else if (itemId == R.id.navigation_files) {
-                selectedFragment = new FilesFragment();
-            } else if (itemId == R.id.navigation_tools) {
-                selectedFragment = new ToolsFragment();
+                targetFragment = filesFragment;
             } else if (itemId == R.id.navigation_settings) {
-                selectedFragment = new SettingsFragment();
+                targetFragment = settingsFragment;
             }
 
-            if (selectedFragment != null) {
+            if (targetFragment != null && targetFragment != activeFragment) {
                 getSupportFragmentManager().beginTransaction()
                         .setCustomAnimations(R.anim.fade_in, R.anim.fade_out)
-                        .replace(R.id.fragmentContainer, selectedFragment)
+                        .hide(activeFragment)
+                        .show(targetFragment)
                         .commit();
+                activeFragment = targetFragment;
                 return true;
             }
-            return false;
+            return targetFragment != null;
         });
 
-        showDonationDialogIfNeeded(this, false);
+        showPrivacyPolicyDialogIfNeeded(this);
 
         handleIncomingIntent(getIntent());
     }
@@ -124,85 +131,107 @@ public class MainActivity extends AppCompatActivity {
         if (intent != null && (Intent.ACTION_VIEW.equals(intent.getAction()) || Intent.ACTION_EDIT.equals(intent.getAction())) && intent.getData() != null) {
             Uri uri = intent.getData();
             Executors.newSingleThreadExecutor().execute(() -> {
-                File file = getFileFromUri(this, uri);
-                if (file != null && file.exists()) {
-                    String name = file.getName().toLowerCase();
+                try {
+                    String originalName = getFileNameFromUri(this, uri);
+                    InputStream is = getContentResolver().openInputStream(uri);
+                    if (is == null) return;
+
+                    File destFile = AsterineStorageManager.getFileForOperation(this, null, originalName);
+                    FileOutputStream fos = new FileOutputStream(destFile);
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = is.read(buf)) > 0) {
+                        fos.write(buf, 0, len);
+                    }
+                    fos.close();
+                    is.close();
+
+                    String lower = originalName.toLowerCase();
+                    String type = "PDF";
+                    if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt")) {
+                        type = "WORD";
+                    } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv")) {
+                        type = "EXCEL";
+                    } else if (lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".xml") || lower.endsWith(".json")) {
+                        type = "TXT";
+                    }
+                    final String docType = type;
+
                     DocumentItem item = new DocumentItem(
                             String.valueOf(System.currentTimeMillis()),
-                            file.getName(),
-                            file.getAbsolutePath(),
-                            (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) ? "EXCEL" : "PDF",
-                            file.length(),
+                            originalName,
+                            destFile.getAbsolutePath(),
+                            docType,
+                            destFile.length(),
                             System.currentTimeMillis(),
                             "Recent"
                     );
                     DocumentRepository.getInstance(this).addDocument(item);
 
                     runOnUiThread(() -> {
-                        if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
+                        if ("EXCEL".equals(docType)) {
                             Intent viewIntent = new Intent(this, ExcelViewerActivity.class);
-                            viewIntent.putExtra("FILE_PATH", file.getAbsolutePath());
+                            viewIntent.putExtra("FILE_PATH", destFile.getAbsolutePath());
                             startActivity(viewIntent);
                         } else {
                             Intent viewIntent = new Intent(this, PdfViewerActivity.class);
-                            viewIntent.setData(uri);
-                            viewIntent.putExtra("FILE_PATH", file.getAbsolutePath());
+                            viewIntent.putExtra("FILE_PATH", destFile.getAbsolutePath());
                             startActivity(viewIntent);
                         }
                     });
-                }
+                } catch (Exception ignored) {}
             });
         }
     }
 
-    private static File getFileFromUri(Context context, Uri uri) {
-        if (uri == null) return null;
-        try {
-            String fileName = "document_" + System.currentTimeMillis();
-            String extension = ".pdf";
-
-            if (uri.getScheme() != null && uri.getScheme().equals("content")) {
-                try (Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
-                    if (cursor != null && cursor.moveToFirst()) {
-                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                        if (nameIndex != -1) {
-                            String name = cursor.getString(nameIndex);
-                            if (name != null) {
-                                fileName = name;
-                                int dot = name.lastIndexOf('.');
-                                if (dot != -1) {
-                                    extension = name.substring(dot);
-                                }
-                            }
-                        }
+    private static String getFileNameFromUri(Context context, Uri uri) {
+        String result = null;
+        if (uri.getScheme() != null && uri.getScheme().equals("content")) {
+            try (Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (nameIndex != -1) {
+                        result = cursor.getString(nameIndex);
                     }
-                } catch (Exception ignored) {}
-            } else if (uri.getPath() != null) {
-                File pathFile = new File(uri.getPath());
-                fileName = pathFile.getName();
-                int dot = fileName.lastIndexOf('.');
-                if (dot != -1) {
-                    extension = fileName.substring(dot);
+                }
+            } catch (Exception ignored) {}
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result != null ? result.lastIndexOf('/') : -1;
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+
+        if (result == null || result.startsWith("open_") || result.startsWith("app_open_") || result.startsWith("document_") || !result.contains(".")) {
+            String mimeType = context.getContentResolver().getType(uri);
+            String ext = ".pdf";
+            String prefix = "Document_";
+            if (mimeType != null) {
+                if (mimeType.contains("wordprocessingml") || mimeType.contains("msword")) {
+                    ext = ".docx";
+                    prefix = "Word_Document_";
+                } else if (mimeType.contains("spreadsheet") || mimeType.contains("excel") || mimeType.contains("csv")) {
+                    ext = ".xlsx";
+                    prefix = "Spreadsheet_";
+                } else if (mimeType.contains("text")) {
+                    ext = ".txt";
+                    prefix = "Text_Document_";
                 }
             }
-
-            InputStream is = context.getContentResolver().openInputStream(uri);
-            if (is == null) return null;
-
-            File tempFile = File.createTempFile("app_open_", extension, context.getCacheDir());
-            FileOutputStream fos = new FileOutputStream(tempFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while ((len = is.read(buf)) > 0) {
-                fos.write(buf, 0, len);
+            if (result == null || result.trim().isEmpty()) {
+                result = prefix + System.currentTimeMillis() + ext;
+            } else {
+                int dot = result.lastIndexOf('.');
+                if (dot != -1) {
+                    result = prefix + System.currentTimeMillis() + result.substring(dot);
+                } else {
+                    result = result + ext;
+                }
             }
-            fos.close();
-            is.close();
-
-            return tempFile;
-        } catch (Exception e) {
-            return null;
         }
+        return result;
     }
 
     public static void showDonationDialogIfNeeded(Context context, boolean forceShow) {
@@ -224,6 +253,21 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(context, context.getString(R.string.bank_copied_msg), Toast.LENGTH_SHORT).show();
             });
             builder.setNegativeButton(context.getString(R.string.close), null);
+            builder.show();
+        }
+    }
+
+    public static void showPrivacyPolicyDialogIfNeeded(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("asterine_privacy_popup_pref", Context.MODE_PRIVATE);
+        boolean shown = prefs.getBoolean("privacy_shown", false);
+        if (!shown) {
+            prefs.edit().putBoolean("privacy_shown", true).apply();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle(context.getString(R.string.privacy_policy));
+            builder.setIcon(R.drawable.asterine_logo_image);
+            builder.setMessage(context.getString(R.string.privacy_policy_message));
+            builder.setPositiveButton(context.getString(R.string.close), null);
             builder.show();
         }
     }

@@ -14,6 +14,15 @@
         android:layout_weight="1"
         android:background="@color/background_light" />
 
+    <FrameLayout
+        android:id="@+id/adContainerMain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:visibility="gone" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
         android:layout_width="match_parent"

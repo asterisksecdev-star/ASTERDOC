@@ -648,3 +648,4 @@ public class ExcelViewerActivity extends AppCompatActivity {
         overridePendingTransition(R.anim.fade_in, R.anim.slide_out_right);
     }
 }
+

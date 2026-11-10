@@ -107,3 +107,4 @@ public class WelcomeSlidesActivity extends AppCompatActivity {
         }
     }
 }
+

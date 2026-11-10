@@ -51,16 +51,13 @@ public class ToolsFragment extends Fragment implements ToolAdapter.OnToolClickLi
     private List<ToolItem> getScanTools() {
         List<ToolItem> list = new ArrayList<>();
         list.add(new ToolItem("s1", getString(R.string.scan_document), android.R.drawable.ic_menu_camera, "SCAN"));
-        list.add(new ToolItem("s2", getString(R.string.ocr_text_extract), android.R.drawable.ic_menu_search, "OCR"));
         return list;
     }
 
     private List<ToolItem> getConvertTools() {
         List<ToolItem> list = new ArrayList<>();
-        list.add(new ToolItem("c1", getString(R.string.pdf_to_word), android.R.drawable.ic_menu_edit, "PDF_WORD"));
         list.add(new ToolItem("c2", getString(R.string.word_to_pdf), android.R.drawable.ic_menu_save, "WORD_PDF"));
         list.add(new ToolItem("c3", getString(R.string.excel_to_pdf), android.R.drawable.ic_menu_sort_by_size, "EXCEL_PDF"));
-        list.add(new ToolItem("c4", getString(R.string.pdf_to_excel), android.R.drawable.ic_menu_manage, "PDF_EXCEL"));
         list.add(new ToolItem("c5", getString(R.string.image_to_pdf), android.R.drawable.ic_menu_gallery, "IMAGES_PDF"));
         return list;
     }
@@ -69,7 +66,6 @@ public class ToolsFragment extends Fragment implements ToolAdapter.OnToolClickLi
         List<ToolItem> list = new ArrayList<>();
         list.add(new ToolItem("e1", getString(R.string.merge_pdf), android.R.drawable.ic_menu_add, "MERGE"));
         list.add(new ToolItem("e2", getString(R.string.split_pdf), android.R.drawable.ic_menu_crop, "SPLIT"));
-        list.add(new ToolItem("e3", getString(R.string.compress_pdf), android.R.drawable.ic_menu_sort_by_size, "COMPRESS"));
         list.add(new ToolItem("e4", getString(R.string.sign_pdf), android.R.drawable.ic_menu_send, "SIGN"));
         list.add(new ToolItem("e5", getString(R.string.page_arranger), android.R.drawable.ic_menu_sort_alphabetically, "ARRANGE"));
         return list;
@@ -95,3 +91,4 @@ public class ToolsFragment extends Fragment implements ToolAdapter.OnToolClickLi
         }
     }
 }
+

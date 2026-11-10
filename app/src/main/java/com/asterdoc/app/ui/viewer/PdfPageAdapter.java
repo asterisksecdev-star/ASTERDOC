@@ -40,6 +40,37 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
     private float activeStrokeWidth = 8f;
     private String activeSearchQuery = null;
 
+    private float globalZoomScale = 1.0f;
+    private RecyclerView recyclerView;
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        this.recyclerView = recyclerView;
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        this.recyclerView = null;
+    }
+
+    public float getGlobalZoomScale() {
+        return globalZoomScale;
+    }
+
+    public void setGlobalZoomScale(float scale) {
+        this.globalZoomScale = Math.max(1.0f, Math.min(5.0f, scale));
+        if (recyclerView != null) {
+            for (int i = 0; i < getItemCount(); i++) {
+                RecyclerView.ViewHolder vh = recyclerView.findViewHolderForAdapterPosition(i);
+                if (vh instanceof PageViewHolder) {
+                    ((PageViewHolder) vh).ivPdfPage.setSaveScale(this.globalZoomScale);
+                }
+            }
+        }
+    }
+
     public void setSearchQuery(String query) {
         this.activeSearchQuery = query;
         notifyDataSetChanged();
@@ -58,7 +89,7 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
         this.renderer = tempRenderer;
 
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        final int cacheSize = maxMemory / 3;
+        final int cacheSize = Math.min(maxMemory / 8, 48 * 1024);
         memoryCache = new LruCache<Integer, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(Integer key, Bitmap bitmap) {
@@ -82,6 +113,17 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
         return activeToolMode;
     }
 
+    private boolean isInvertColors = false;
+
+    public void setInvertColors(boolean invert) {
+        this.isInvertColors = invert;
+        notifyDataSetChanged();
+    }
+
+    public boolean isInvertColors() {
+        return isInvertColors;
+    }
+
     @NonNull
     @Override
     public PageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -96,7 +138,34 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
         holder.drawingCanvas.setStrokeWidth(activeStrokeWidth);
         holder.drawingCanvas.setSearchQuery(activeSearchQuery);
 
+        if (isInvertColors) {
+            float[] colorMatrixInvert = {
+                -1.0f,  0.0f,  0.0f, 0.0f, 255.0f,
+                 0.0f, -1.0f,  0.0f, 0.0f, 255.0f,
+                 0.0f,  0.0f, -1.0f, 0.0f, 255.0f,
+                 0.0f,  0.0f,  0.0f, 1.0f,   0.0f
+            };
+            holder.ivPdfPage.setColorFilter(new android.graphics.ColorMatrixColorFilter(colorMatrixInvert));
+        } else {
+            holder.ivPdfPage.clearColorFilter();
+        }
+
         holder.ivPdfPage.setOnMatrixChangedListener((matrix, scale) -> holder.drawingCanvas.setDrawMatrix(matrix));
+
+        holder.ivPdfPage.setSaveScale(globalZoomScale);
+        holder.ivPdfPage.setOnZoomScaleChangeListener(newScale -> {
+            if (this.globalZoomScale != newScale) {
+                this.globalZoomScale = newScale;
+                if (recyclerView != null) {
+                    for (int i = 0; i < getItemCount(); i++) {
+                        RecyclerView.ViewHolder vh = recyclerView.findViewHolderForAdapterPosition(i);
+                        if (vh instanceof PageViewHolder && vh != holder) {
+                            ((PageViewHolder) vh).ivPdfPage.setSaveScaleQuiet(newScale);
+                        }
+                    }
+                }
+            }
+        });
 
         if (renderer != null && position < pageCount) {
             holder.ivPdfPage.setOnZoomImageClickListener(() -> {
@@ -122,7 +191,7 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
                     synchronized (renderer) {
                         PdfRenderer.Page page = renderer.openPage(adapterPosition);
                         int screenWidth = holder.itemView.getContext().getResources().getDisplayMetrics().widthPixels;
-                        float densityScale = 3.5f; // Ultra high definition crisp text resolution
+                        float densityScale = 1.8f;
                         int width = Math.max(1, (int) (screenWidth * densityScale));
                         int height = Math.max(1, (page.getHeight() * width) / page.getWidth());
 
@@ -173,3 +242,4 @@ public class PdfPageAdapter extends RecyclerView.Adapter<PdfPageAdapter.PageView
         }
     }
 }
+

@@ -1,8 +1,6 @@
 package com.asterdoc.app.ui.home;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -13,48 +11,39 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
-import android.widget.EditText;
-import android.widget.PopupMenu;
-import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.asterdoc.app.R;
 import com.asterdoc.app.data.DocumentItem;
 import com.asterdoc.app.data.DocumentRepository;
 import com.asterdoc.app.pdf.PdfProcessor;
-import com.asterdoc.app.pdf.SamplePdfGenerator;
+import com.asterdoc.app.ui.files.CategoryFileListActivity;
 import com.asterdoc.app.ui.tools.ToolActionActivity;
 import com.asterdoc.app.ui.tools.ToolAdapter;
 import com.asterdoc.app.ui.tools.ToolItem;
 import com.asterdoc.app.ui.tools.arranger.PdfArrangerActivity;
 import com.asterdoc.app.ui.tools.sign.SignPdfActivity;
-import com.asterdoc.app.ui.viewer.ExcelViewerActivity;
 import com.asterdoc.app.ui.viewer.PdfViewerActivity;
 import com.asterdoc.app.util.BrandedToast;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
 
-public class HomeFragment extends Fragment implements DocumentAdapter.OnDocumentClickListener, ToolAdapter.OnToolClickListener {
+public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickListener {
 
     private DocumentRepository repository;
-    private DocumentAdapter documentAdapter;
-    private View llBulkActions;
-    private TextView tvSelectedCount;
+    private TextView tvCountAll, tvCountPdf, tvCountWord, tvCountExcel, tvCountPpt, tvCountTxt, tvCountTrash, tvCountFav;
 
     private final ActivityResultLauncher<Intent> phoneDocPickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -75,20 +64,6 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
 
         repository = DocumentRepository.getInstance(requireContext());
 
-        llBulkActions = view.findViewById(R.id.llBulkActions);
-        tvSelectedCount = view.findViewById(R.id.tvSelectedCount);
-        View btnBulkSelectAll = view.findViewById(R.id.btnBulkSelectAll);
-        View btnBulkShare = view.findViewById(R.id.btnBulkShare);
-        View btnBulkCompress = view.findViewById(R.id.btnBulkCompress);
-        View btnBulkDelete = view.findViewById(R.id.btnBulkDelete);
-        View btnBulkClose = view.findViewById(R.id.btnBulkClose);
-
-        if (btnBulkSelectAll != null) btnBulkSelectAll.setOnClickListener(v -> documentAdapter.toggleSelectAll());
-        if (btnBulkShare != null) btnBulkShare.setOnClickListener(v -> bulkShareSelected());
-        if (btnBulkCompress != null) btnBulkCompress.setOnClickListener(v -> bulkCompressSelected());
-        if (btnBulkDelete != null) btnBulkDelete.setOnClickListener(v -> bulkDeleteSelected());
-        if (btnBulkClose != null) btnBulkClose.setOnClickListener(v -> documentAdapter.clearSelection());
-
         // Open Phone Document Card & FAB Actions
         View cardOpen = view.findViewById(R.id.cardOpenPhoneDocument);
         if (cardOpen != null) {
@@ -102,21 +77,57 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
 
         LayoutAnimationController layoutAnim = AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_animation_fall_down);
 
-        // Quick Tools Setup
-        RecyclerView rvQuickTools = view.findViewById(R.id.rvQuickTools);
-        rvQuickTools.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        List<ToolItem> quickTools = getQuickToolsList();
-        rvQuickTools.setAdapter(new ToolAdapter(quickTools, this));
-        rvQuickTools.setLayoutAnimation(layoutAnim);
-        rvQuickTools.scheduleLayoutAnimation();
+        // Tool Sections Setup
+        RecyclerView rvConvert = view.findViewById(R.id.rvConvertTools);
+        rvConvert.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvConvert.setAdapter(new ToolAdapter(getConvertTools(), this));
+        rvConvert.setLayoutAnimation(layoutAnim);
 
-        // Recent Documents Setup
-        RecyclerView rvRecentDocs = view.findViewById(R.id.rvRecentDocs);
-        rvRecentDocs.setLayoutManager(new LinearLayoutManager(requireContext()));
-        documentAdapter = new DocumentAdapter(repository.getRecentDocuments(), this);
-        rvRecentDocs.setAdapter(documentAdapter);
-        rvRecentDocs.setLayoutAnimation(layoutAnim);
-        rvRecentDocs.scheduleLayoutAnimation();
+        RecyclerView rvEdit = view.findViewById(R.id.rvEditTools);
+        rvEdit.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvEdit.setAdapter(new ToolAdapter(getEditTools(), this));
+        rvEdit.setLayoutAnimation(layoutAnim);
+
+        RecyclerView rvScan = view.findViewById(R.id.rvScanTools);
+        rvScan.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvScan.setAdapter(new ToolAdapter(getScanTools(), this));
+        rvScan.setLayoutAnimation(layoutAnim);
+
+        // Bind Category Card Count TextViews
+        tvCountAll = view.findViewById(R.id.tvCountAll);
+        tvCountPdf = view.findViewById(R.id.tvCountPdf);
+        tvCountWord = view.findViewById(R.id.tvCountWord);
+        tvCountExcel = view.findViewById(R.id.tvCountExcel);
+        tvCountPpt = view.findViewById(R.id.tvCountPpt);
+        tvCountTxt = view.findViewById(R.id.tvCountTxt);
+        tvCountTrash = view.findViewById(R.id.tvCountTrash);
+        tvCountFav = view.findViewById(R.id.tvCountFav);
+
+        // Bind Category Card Click Listeners
+        View cardCatAll = view.findViewById(R.id.cardCatAll);
+        View cardCatPdf = view.findViewById(R.id.cardCatPdf);
+        View cardCatWord = view.findViewById(R.id.cardCatWord);
+        View cardCatExcel = view.findViewById(R.id.cardCatExcel);
+        View cardCatPpt = view.findViewById(R.id.cardCatPpt);
+        View cardCatTxt = view.findViewById(R.id.cardCatTxt);
+        View cardCatTrash = view.findViewById(R.id.cardCatTrash);
+        View cardCatFav = view.findViewById(R.id.cardCatFav);
+
+        if (cardCatAll != null) cardCatAll.setOnClickListener(v -> openCategoryFileList("ALL"));
+        if (cardCatPdf != null) cardCatPdf.setOnClickListener(v -> openCategoryFileList("PDF"));
+        if (cardCatWord != null) cardCatWord.setOnClickListener(v -> openCategoryFileList("WORD"));
+        if (cardCatExcel != null) cardCatExcel.setOnClickListener(v -> openCategoryFileList("EXCEL"));
+        if (cardCatPpt != null) cardCatPpt.setOnClickListener(v -> openCategoryFileList("PPT"));
+        if (cardCatTxt != null) cardCatTxt.setOnClickListener(v -> openCategoryFileList("TXT"));
+        if (cardCatTrash != null) cardCatTrash.setOnClickListener(v -> openCategoryFileList("TRASH"));
+        if (cardCatFav != null) cardCatFav.setOnClickListener(v -> openCategoryFileList("FAVORITES"));
+
+        updateCategoryCards();
+
+        View nativeContainer = view.findViewById(R.id.nativeAdContainerHome);
+        if (nativeContainer != null) {
+            com.asterdoc.app.ads.AdManager.loadNativeAd(requireContext(), (ViewGroup) nativeContainer);
+        }
 
         return view;
     }
@@ -124,12 +135,62 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
     @Override
     public void onResume() {
         super.onResume();
+        updateCategoryCards();
         if (getView() != null) {
-            RecyclerView rvQuickTools = getView().findViewById(R.id.rvQuickTools);
-            RecyclerView rvRecentDocs = getView().findViewById(R.id.rvRecentDocs);
-            if (rvQuickTools != null) rvQuickTools.scheduleLayoutAnimation();
-            if (rvRecentDocs != null) rvRecentDocs.scheduleLayoutAnimation();
+            RecyclerView rvConvert = getView().findViewById(R.id.rvConvertTools);
+            RecyclerView rvEdit = getView().findViewById(R.id.rvEditTools);
+            RecyclerView rvScan = getView().findViewById(R.id.rvScanTools);
+            if (rvConvert != null) rvConvert.scheduleLayoutAnimation();
+            if (rvEdit != null) rvEdit.scheduleLayoutAnimation();
+            if (rvScan != null) rvScan.scheduleLayoutAnimation();
         }
+    }
+
+    private void updateCategoryCards() {
+        if (repository == null) return;
+
+        List<DocumentItem> allDocs = repository.getAllDocuments();
+        int countAll = allDocs.size();
+        int countPdf = 0;
+        int countWord = 0;
+        int countExcel = 0;
+        int countPpt = 0;
+        int countTxt = 0;
+        int countFav = 0;
+
+        for (DocumentItem item : allDocs) {
+            if (item.isFavorite()) countFav++;
+
+            String type = item.getType() != null ? item.getType().toUpperCase() : "";
+            String name = item.getName() != null ? item.getName().toLowerCase() : "";
+
+            if ("PDF".equals(type) || name.endsWith(".pdf")) {
+                countPdf++;
+            } else if ("WORD".equals(type) || name.endsWith(".docx") || name.endsWith(".doc")) {
+                countWord++;
+            } else if ("EXCEL".equals(type) || name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
+                countExcel++;
+            } else if ("PPT".equals(type) || name.endsWith(".pptx") || name.endsWith(".ppt")) {
+                countPpt++;
+            } else if ("TXT".equals(type) || name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md")) {
+                countTxt++;
+            }
+        }
+
+        if (tvCountAll != null) tvCountAll.setText(String.valueOf(countAll));
+        if (tvCountPdf != null) tvCountPdf.setText(String.valueOf(countPdf));
+        if (tvCountWord != null) tvCountWord.setText(String.valueOf(countWord));
+        if (tvCountExcel != null) tvCountExcel.setText(String.valueOf(countExcel));
+        if (tvCountPpt != null) tvCountPpt.setText(String.valueOf(countPpt));
+        if (tvCountTxt != null) tvCountTxt.setText(String.valueOf(countTxt));
+        if (tvCountFav != null) tvCountFav.setText(String.valueOf(countFav));
+        if (tvCountTrash != null) tvCountTrash.setText(String.valueOf(repository.getTrashDocuments().size()));
+    }
+
+    private void openCategoryFileList(String category) {
+        Intent intent = new Intent(requireContext(), CategoryFileListActivity.class);
+        intent.putExtra("CATEGORY_TYPE", category);
+        startActivity(intent);
     }
 
     private void launchPhoneDocPicker() {
@@ -141,8 +202,6 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
                 "application/msword",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "application/vnd.ms-excel",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "application/vnd.ms-powerpoint",
                 "text/plain"
         };
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
@@ -169,14 +228,42 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
                 result = result.substring(cut + 1);
             }
         }
-        return result != null ? result : "Document_" + System.currentTimeMillis() + ".pdf";
+
+        if (result == null || result.startsWith("open_") || result.startsWith("app_open_") || result.startsWith("document_") || !result.contains(".")) {
+            String mimeType = requireContext().getContentResolver().getType(uri);
+            String ext = ".pdf";
+            String prefix = "Document_";
+            if (mimeType != null) {
+                if (mimeType.contains("wordprocessingml") || mimeType.contains("msword")) {
+                    ext = ".docx";
+                    prefix = "Word_Document_";
+                } else if (mimeType.contains("spreadsheet") || mimeType.contains("excel") || mimeType.contains("csv")) {
+                    ext = ".xlsx";
+                    prefix = "Spreadsheet_";
+                } else if (mimeType.contains("text")) {
+                    ext = ".txt";
+                    prefix = "Text_Document_";
+                }
+            }
+            if (result == null || result.trim().isEmpty()) {
+                result = prefix + System.currentTimeMillis() + ext;
+            } else {
+                int dot = result.lastIndexOf('.');
+                if (dot != -1) {
+                    result = prefix + System.currentTimeMillis() + result.substring(dot);
+                } else {
+                    result = result + ext;
+                }
+            }
+        }
+        return result;
     }
 
     private void importAndOpenDocument(Uri uri) {
         try {
             InputStream is = requireContext().getContentResolver().openInputStream(uri);
             String fileName = getFileNameFromUri(uri);
-            File dir = PdfProcessor.getAsterDocsDirectory();
+            File dir = PdfProcessor.getAsterDocsDirectory(requireContext());
             File importedFile = new File(dir, fileName);
 
             FileOutputStream fos = new FileOutputStream(importedFile);
@@ -190,12 +277,13 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
 
             String type = "PDF";
             String lower = fileName.toLowerCase();
-            if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+            if (lower.endsWith(".pptx") || lower.endsWith(".ppt") || lower.endsWith(".pps") || lower.endsWith(".ppsx")) {
+                BrandedToast.show(requireContext(), "PowerPoint files are currently not supported by Asterine.");
+                return;
+            } else if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
                 type = "WORD";
             } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
                 type = "EXCEL";
-            } else if (lower.endsWith(".pptx") || lower.endsWith(".ppt")) {
-                type = "PPT";
             } else if (lower.endsWith(".txt")) {
                 type = "TXT";
             }
@@ -211,335 +299,70 @@ public class HomeFragment extends Fragment implements DocumentAdapter.OnDocument
             );
             if (repository != null) {
                 repository.addDocument(item);
-                if (documentAdapter != null) {
-                    documentAdapter.updateData(repository.getRecentDocuments());
-                }
             }
 
-            openDocument(item);
+            Intent intent = new Intent(requireContext(), PdfViewerActivity.class);
+            intent.putExtra("FILE_PATH", importedFile.getAbsolutePath());
+            startActivity(intent);
 
         } catch (Exception e) {
             BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
         }
     }
 
-    private List<ToolItem> getQuickToolsList() {
+
+
+    private List<ToolItem> getScanTools() {
         List<ToolItem> list = new ArrayList<>();
-        list.add(new ToolItem("1", getString(R.string.scan_document), android.R.drawable.ic_menu_camera, "SCAN"));
-        list.add(new ToolItem("2", getString(R.string.merge_pdf), android.R.drawable.ic_menu_add, "MERGE"));
-        list.add(new ToolItem("3", getString(R.string.compress_pdf), android.R.drawable.ic_menu_sort_by_size, "COMPRESS"));
-        list.add(new ToolItem("4", getString(R.string.sign_pdf), android.R.drawable.ic_menu_send, "SIGN"));
-        list.add(new ToolItem("5", getString(R.string.page_arranger), android.R.drawable.ic_menu_sort_alphabetically, "ARRANGE"));
+        list.add(new ToolItem("s1", getString(R.string.scan_document), android.R.drawable.ic_menu_camera, "SCAN"));
         return list;
     }
 
-    @Override
-    public void onDocumentClick(DocumentItem item) {
-        openDocument(item);
+    private List<ToolItem> getConvertTools() {
+        List<ToolItem> list = new ArrayList<>();
+        list.add(new ToolItem("c2", getString(R.string.word_to_pdf), android.R.drawable.ic_menu_save, "WORD_PDF"));
+        list.add(new ToolItem("c3", getString(R.string.excel_to_pdf), android.R.drawable.ic_menu_sort_by_size, "EXCEL_PDF"));
+        list.add(new ToolItem("c5", getString(R.string.image_to_pdf), android.R.drawable.ic_menu_gallery, "IMAGES_PDF"));
+        return list;
     }
 
-    @Override
-    public void onDocumentLongClick(DocumentItem item) {
-        // Handled in adapter
-    }
-
-    @Override
-    public void onSelectionChanged(int selectedCount) {
-        if (llBulkActions != null) {
-            if (selectedCount > 0) {
-                llBulkActions.setVisibility(View.VISIBLE);
-                if (tvSelectedCount != null) {
-                    tvSelectedCount.setText(getString(R.string.selection_count, selectedCount));
-                }
-            } else {
-                llBulkActions.setVisibility(View.GONE);
-            }
-        }
-    }
-
-    @Override
-    public void onFavoriteClick(DocumentItem item) {
-        if (repository != null && documentAdapter != null) {
-            item.setFavorite(!item.isFavorite());
-            repository.updateDocument(item);
-            documentAdapter.updateData(repository.getRecentDocuments());
-            BrandedToast.show(requireContext(), getString(item.isFavorite() ? R.string.msg_added_favorites : R.string.msg_removed_favorites));
-        }
-    }
-
-    @Override
-    public void onMoreClick(DocumentItem item, View anchor) {
-        PopupMenu popup = new PopupMenu(requireContext(), anchor);
-        popup.getMenu().add(0, 1, 0, getString(R.string.menu_open));
-        popup.getMenu().add(0, 2, 0, getString(R.string.menu_share));
-        popup.getMenu().add(0, 3, 0, getString(R.string.menu_rename));
-        popup.getMenu().add(0, 4, 0, getString(R.string.menu_move_trash));
-
-        popup.setOnMenuItemClickListener(menuItem -> {
-            int itemId = menuItem.getItemId();
-            if (itemId == 1) {
-                openDocument(item);
-                return true;
-            } else if (itemId == 2) {
-                shareDocument(item);
-                return true;
-            } else if (itemId == 3) {
-                renameDocumentDialog(item);
-                return true;
-            } else if (itemId == 4) {
-                confirmMoveToTrash(item);
-                return true;
-            }
-            return false;
-        });
-        popup.show();
-    }
-
-    private void openDocument(DocumentItem item) {
-        File file = new File(item.getPath());
-        if (!file.exists() || file.length() == 0) {
-            file = SamplePdfGenerator.createSamplePdf(requireContext(), item.getName(), item.getName());
-            item.setPath(file.getAbsolutePath());
-            item.setSize(file.length());
-            if (repository != null) {
-                repository.updateDocument(item);
-            }
-        }
-
-        String name = file.getName().toLowerCase();
-        if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
-            Intent intent = new Intent(requireContext(), ExcelViewerActivity.class);
-            intent.putExtra("FILE_PATH", file.getAbsolutePath());
-            startActivity(intent);
-            return;
-        }
-
-        if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") ||
-            name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") ||
-            name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
-            BrandedToast.show(requireContext(), getString(R.string.msg_prep_doc_view));
-            final File targetFile = file;
-            Executors.newSingleThreadExecutor().execute(() -> {
-                File viewableFile = targetFile;
-                try {
-                    if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
-                        viewableFile = PdfProcessor.wordToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
-                    } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp")) {
-                        viewableFile = PdfProcessor.pptxToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
-                    } else {
-                        viewableFile = PdfProcessor.textToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
-                    }
-                } catch (Exception ignored) {}
-
-                final File finalViewable = viewableFile;
-                if (isAdded()) {
-                    requireActivity().runOnUiThread(() -> {
-                        Intent intent = new Intent(requireContext(), PdfViewerActivity.class);
-                        intent.putExtra("FILE_PATH", finalViewable.getAbsolutePath());
-                        startActivity(intent);
-                    });
-                }
-            });
-        } else {
-            Intent intent = new Intent(requireContext(), PdfViewerActivity.class);
-            intent.putExtra("FILE_PATH", file.getAbsolutePath());
-            startActivity(intent);
-        }
-    }
-
-    private void shareDocument(DocumentItem item) {
-        File file = new File(item.getPath());
-        if (!file.exists() || file.length() == 0) {
-            file = SamplePdfGenerator.createSamplePdf(requireContext(), item.getName(), item.getName());
-            item.setPath(file.getAbsolutePath());
-            item.setSize(file.length());
-            if (repository != null) {
-                repository.updateDocument(item);
-            }
-        }
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("application/pdf");
-        Uri uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".fileprovider", file);
-        intent.putExtra(Intent.EXTRA_STREAM, uri);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(Intent.createChooser(intent, getString(R.string.menu_share)));
-    }
-
-    private String getKey(DocumentItem item) {
-        if (item == null) return "";
-        return item.getId() != null ? item.getId() : (item.getPath() != null ? item.getPath() : item.getName());
-    }
-
-    private void bulkShareSelected() {
-        Set<String> selectedKeys = documentAdapter.getSelectedIds();
-        if (selectedKeys.isEmpty()) return;
-
-        ArrayList<Uri> uris = new ArrayList<>();
-        List<DocumentItem> all = documentAdapter.getItems();
-        for (DocumentItem item : all) {
-            String key = getKey(item);
-            if (selectedKeys.contains(key)) {
-                File file = new File(item.getPath());
-                if (!file.exists() || file.length() == 0) {
-                    file = SamplePdfGenerator.createSamplePdf(requireContext(), item.getName(), item.getName());
-                    item.setPath(file.getAbsolutePath());
-                    item.setSize(file.length());
-                    if (repository != null) repository.updateDocument(item);
-                }
-                Uri uri = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".fileprovider", file);
-                uris.add(uri);
-            }
-        }
-
-        if (!uris.isEmpty()) {
-            Intent intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-            intent.setType("*/*");
-            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(intent, getString(R.string.menu_share)));
-        }
-    }
-
-    private void bulkDeleteSelected() {
-        Set<String> selectedKeys = documentAdapter.getSelectedIds();
-        if (selectedKeys.isEmpty()) return;
-
-        int count = selectedKeys.size();
-        new AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.bulk_move_trash_title))
-                .setMessage(getString(R.string.bulk_move_trash_message, count))
-                .setIcon(R.mipmap.ic_launcher)
-                .setPositiveButton(getString(R.string.bulk_move_positive), (dialog, which) -> {
-                    List<DocumentItem> all = documentAdapter.getItems();
-                    for (DocumentItem item : all) {
-                        String key = getKey(item);
-                        if (selectedKeys.contains(key)) {
-                            if (repository != null) {
-                                repository.moveToTrash(item.getId());
-                            }
-                        }
-                    }
-                    if (documentAdapter != null) {
-                        documentAdapter.clearSelection();
-                        documentAdapter.updateData(repository.getRecentDocuments());
-                    }
-                    BrandedToast.show(requireContext(), getString(R.string.bulk_trash_msg, count));
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
-    }
-
-    private void bulkCompressSelected() {
-        Set<String> selectedKeys = documentAdapter.getSelectedIds();
-        if (selectedKeys.isEmpty()) return;
-
-        List<DocumentItem> all = documentAdapter.getItems();
-        List<File> toCompress = new ArrayList<>();
-        for (DocumentItem item : all) {
-            String key = getKey(item);
-            if (selectedKeys.contains(key)) {
-                File file = new File(item.getPath());
-                if (file.exists()) {
-                    toCompress.add(file);
-                }
-            }
-        }
-
-        if (toCompress.isEmpty()) {
-            BrandedToast.show(requireContext(), "No valid files to compress");
-            return;
-        }
-
-        BrandedToast.show(requireContext(), getString(R.string.bulk_compress_toast, toCompress.size()));
-        Executors.newSingleThreadExecutor().execute(() -> {
-            int successCount = 0;
-            for (File file : toCompress) {
-                try {
-                    File comp = PdfProcessor.compressPdf(requireContext(), file, file.getName());
-                    if (comp != null && comp.exists() && comp.length() < file.length()) {
-                        successCount++;
-                        DocumentItem newItem = new DocumentItem(
-                                String.valueOf(System.currentTimeMillis()),
-                                comp.getName(),
-                                comp.getAbsolutePath(),
-                                "PDF",
-                                comp.length(),
-                                System.currentTimeMillis(),
-                                "Created"
-                        );
-                        if (repository != null) {
-                            repository.addDocument(newItem);
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
-
-            final int count = successCount;
-            if (isAdded()) {
-                requireActivity().runOnUiThread(() -> {
-                    if (documentAdapter != null && repository != null) {
-                        documentAdapter.clearSelection();
-                        documentAdapter.updateData(repository.getRecentDocuments());
-                    }
-                    BrandedToast.show(requireContext(), getString(R.string.bulk_compress_success, count, toCompress.size()));
-                });
-            }
-        });
-    }
-
-    private void renameDocumentDialog(DocumentItem item) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle(R.string.rename_document);
-        final EditText input = new EditText(requireContext());
-        input.setText(item.getName());
-        builder.setView(input);
-
-        builder.setPositiveButton(R.string.rename, (dialog, which) -> {
-            String newName = input.getText().toString().trim();
-            if (!newName.isEmpty()) {
-                item.setName(newName);
-                if (repository != null) {
-                    repository.updateDocument(item);
-                    documentAdapter.updateData(repository.getRecentDocuments());
-                }
-                BrandedToast.show(requireContext(), getString(R.string.msg_doc_renamed));
-            }
-        });
-        builder.setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel());
-        builder.show();
-    }
-
-    private void confirmMoveToTrash(DocumentItem item) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle(R.string.move_to_trash_title)
-                .setMessage(R.string.move_to_trash_msg)
-                .setPositiveButton(R.string.move_to_trash_btn, (dialog, which) -> {
-                    if (repository != null && documentAdapter != null) {
-                        repository.moveToTrash(item.getId());
-                        documentAdapter.updateData(repository.getRecentDocuments());
-                        BrandedToast.show(requireContext(), getString(R.string.msg_moved_trash));
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+    private List<ToolItem> getEditTools() {
+        List<ToolItem> list = new ArrayList<>();
+        list.add(new ToolItem("e1", getString(R.string.merge_pdf), android.R.drawable.ic_menu_add, "MERGE"));
+        list.add(new ToolItem("e2", getString(R.string.split_pdf), android.R.drawable.ic_menu_crop, "SPLIT"));
+        list.add(new ToolItem("e4", getString(R.string.sign_pdf), android.R.drawable.ic_menu_send, "SIGN"));
+        list.add(new ToolItem("e5", getString(R.string.page_arranger), android.R.drawable.ic_menu_sort_alphabetically, "ARRANGE"));
+        return list;
     }
 
     @Override
     public void onToolClick(ToolItem item) {
         String type = item.getToolType();
-        Intent intent;
-        if ("ARRANGE".equals(type)) {
-            intent = new Intent(requireContext(), PdfArrangerActivity.class);
-        } else if ("SIGN".equals(type)) {
-            intent = new Intent(requireContext(), SignPdfActivity.class);
+        if (type == null) type = "";
+        final String toolType = type;
+
+        Runnable launchTool = () -> {
+            Intent intent;
+            if ("ARRANGE".equals(toolType)) {
+                intent = new Intent(requireContext(), PdfArrangerActivity.class);
+            } else if ("SIGN".equals(toolType)) {
+                intent = new Intent(requireContext(), SignPdfActivity.class);
+            } else {
+                intent = new Intent(requireContext(), ToolActionActivity.class);
+                intent.putExtra("TOOL_TYPE", toolType);
+                intent.putExtra("TOOL_TITLE", item.getTitle());
+            }
+            startActivity(intent);
+            if (getActivity() != null) {
+                getActivity().overridePendingTransition(R.anim.slide_in_bottom, R.anim.fade_out);
+            }
+        };
+
+        if ("WORD_PDF".equals(toolType) || "SIGN".equals(toolType) || "EXCEL_PDF".equals(toolType) || "MERGE".equals(toolType) || "ARRANGE".equals(toolType)) {
+            com.asterdoc.app.ads.AdManager.showInterstitial(requireActivity(), item.getTitle(), launchTool);
         } else {
-            intent = new Intent(requireContext(), ToolActionActivity.class);
-            intent.putExtra("TOOL_TYPE", type);
-            intent.putExtra("TOOL_TITLE", item.getTitle());
-        }
-        startActivity(intent);
-        if (getActivity() != null) {
-            getActivity().overridePendingTransition(R.anim.slide_in_bottom, R.anim.fade_out);
+            launchTool.run();
         }
     }
 }
+

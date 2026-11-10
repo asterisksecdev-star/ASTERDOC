@@ -9,10 +9,6 @@
         android:icon="@drawable/ic_nav_files"
         android:title="@string/nav_files" />
     <item
-        android:id="@+id/navigation_tools"
-        android:icon="@drawable/ic_nav_tools"
-        android:title="@string/nav_tools" />
-    <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_nav_settings"
         android:title="@string/nav_settings" />

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,36 @@ public class DocumentRepository {
         prefs.edit().putString(KEY_DOCS, json).apply();
     }
 
+    private long lastSyncTime = 0;
+
+    private synchronized void syncMissingFiles() {
+        if (documents == null) return;
+        long now = System.currentTimeMillis();
+        if (now - lastSyncTime < 30000) { // Throttle disk checks to at most once per 30s
+            return;
+        }
+        lastSyncTime = now;
+
+        boolean modified = false;
+        for (int i = documents.size() - 1; i >= 0; i--) {
+            DocumentItem item = documents.get(i);
+            if (!item.isTrash() && item.getPath() != null) {
+                try {
+                    File file = new File(item.getPath());
+                    if (!file.exists() || file.length() == 0) {
+                        documents.remove(i);
+                        modified = true;
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        if (modified) {
+            saveDocuments();
+        }
+    }
+
     public List<DocumentItem> getAllDocuments() {
+        syncMissingFiles();
         List<DocumentItem> active = new ArrayList<>();
         for (DocumentItem item : documents) {
             if (!item.isTrash()) {
@@ -62,6 +92,7 @@ public class DocumentRepository {
     }
 
     public List<DocumentItem> getRecentDocuments() {
+        syncMissingFiles();
         List<DocumentItem> list = new ArrayList<>();
         for (DocumentItem item : documents) {
             if (!item.isTrash()) {
@@ -72,6 +103,7 @@ public class DocumentRepository {
     }
 
     public List<DocumentItem> getCreatedDocuments() {
+        syncMissingFiles();
         List<DocumentItem> list = new ArrayList<>();
         for (DocumentItem item : documents) {
             if (!item.isTrash() && "Created".equals(item.getCategory())) {
@@ -82,6 +114,7 @@ public class DocumentRepository {
     }
 
     public List<DocumentItem> getScannedDocuments() {
+        syncMissingFiles();
         List<DocumentItem> list = new ArrayList<>();
         for (DocumentItem item : documents) {
             if (!item.isTrash() && ("Scanned".equals(item.getCategory()) || "SCAN".equals(item.getType()))) {
@@ -92,6 +125,7 @@ public class DocumentRepository {
     }
 
     public List<DocumentItem> getFavoriteDocuments() {
+        syncMissingFiles();
         List<DocumentItem> list = new ArrayList<>();
         for (DocumentItem item : documents) {
             if (!item.isTrash() && item.isFavorite()) {
@@ -137,12 +171,39 @@ public class DocumentRepository {
     }
 
     public void deletePermanently(String id) {
-        documents.removeIf(item -> item.getId().equals(id));
+        for (int i = documents.size() - 1; i >= 0; i--) {
+            DocumentItem item = documents.get(i);
+            if (item.getId().equals(id)) {
+                try {
+                    if (item.getPath() != null) {
+                        File file = new File(item.getPath());
+                        if (file.exists()) {
+                            file.delete();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                documents.remove(i);
+                break;
+            }
+        }
         saveDocuments();
     }
 
     public void emptyTrash() {
-        documents.removeIf(DocumentItem::isTrash);
+        for (int i = documents.size() - 1; i >= 0; i--) {
+            DocumentItem item = documents.get(i);
+            if (item.isTrash()) {
+                try {
+                    if (item.getPath() != null) {
+                        File file = new File(item.getPath());
+                        if (file.exists()) {
+                            file.delete();
+                        }
+                    }
+                } catch (Exception ignored) {}
+                documents.remove(i);
+            }
+        }
         saveDocuments();
     }
 
@@ -164,3 +225,4 @@ public class DocumentRepository {
         return results;
     }
 }
+

@@ -1,10 +1,13 @@
-import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
+﻿import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 
 plugins {
     alias(libs.plugins.android.application)
 }
 
 android {
+    buildFeatures {
+        buildConfig = true
+    }
     namespace = "com.asterdoc.app"
     compileSdk = 36
 
@@ -15,6 +18,11 @@ android {
         versionCode = 9
         versionName = "1.2"
 
+        // Google test ad-unit IDs — replace with your own before production
+        buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
+        buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/6300978111\"")
+        buildConfigField("String", "ADMOB_NATIVE_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/2247696110\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -22,6 +30,10 @@ android {
         language {
             enableSplit = false
         }
+    }
+
+    lint {
+        checkReleaseBuilds = false
     }
 
     buildTypes {
@@ -75,3 +87,4 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
 }
+

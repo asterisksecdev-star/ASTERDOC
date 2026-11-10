@@ -3,7 +3,7 @@
     <string name="app_name">AsterDocs</string>
     <string name="app_tagline">All Your Documents. One Powerful App.</string>
     <string name="nav_home">Home</string>
-    <string name="nav_files">Files</string>
+    <string name="nav_files">Recent</string>
     <string name="nav_tools">Tools</string>
     <string name="nav_settings">Settings</string>
     <string name="welcome">Welcome to AsterDocs</string>
@@ -51,6 +51,10 @@
     <string name="password">Password</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="search">Search</string>
+    <string name="search_files_hint">Search files...</string>
+    <string name="empty_trash_banner_desc">Items in Trash can be restored or deleted permanently.</string>
+    <string name="btn_empty_trash_action">Empty Trash</string>
+    <string name="no_files_yet">No files yet</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="share">Share</string>
@@ -281,4 +285,20 @@
     <string name="welcome_title_3">Private &amp; Offline-First 🔒</string>
     <string name="welcome_subtitle_3">Your Documents Stay On Your Device</string>
     <string name="welcome_body_3">AsterDocs processes your private files locally on your phone. Enjoy fast performance without uploading sensitive documents to external servers.</string>
+
+    <string name="pdf_files">PDF Files</string>
+    <string name="word_files">Word Files</string>
+    <string name="excel_files">Excel Files</string>
+    <string name="ppt_files">PPT Files</string>
+    <string name="txt_files">Text Files</string>
+    <string name="favorite_files">Favorite Files</string>
+    <string name="trash_title">Trash</string>
+    <string name="all_files">All Files</string>
+    <string name="sort_by_date">Sort by Date</string>
+    <string name="sort_by_name">Sort by Name</string>
+    <string name="sort_by_size">Sort by Size</string>
+    <string name="btn_delete_from_app">Remove from App</string>
+    <string name="file_not_found_title">File Not Found</string>
+    <string name="file_not_found_msg">File \"%1$s\" was not found on device storage.</string>
+    <string name="msg_document_deleted">Document removed from app</string>
 </resources>

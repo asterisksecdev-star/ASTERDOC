@@ -37,16 +37,11 @@ public class SplashActivity extends AppCompatActivity {
         }
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            AuthManager authManager = AuthManager.getInstance(this);
-            Intent intent;
-            if (authManager.isSessionLocked()) {
-                intent = new Intent(SplashActivity.this, AuthActivity.class);
-            } else {
-                intent = new Intent(SplashActivity.this, MainActivity.class);
-            }
+            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         }, 1300);
     }
 }
+

@@ -22,3 +22,4 @@ public class ArrangerPageItem {
     public Bitmap getThumbnail() { return thumbnail; }
     public String getDocName() { return docName; }
 }
+

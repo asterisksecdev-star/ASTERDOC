@@ -130,3 +130,4 @@ public class ThumbnailGridAdapter extends RecyclerView.Adapter<ThumbnailGridAdap
         }
     }
 }
+

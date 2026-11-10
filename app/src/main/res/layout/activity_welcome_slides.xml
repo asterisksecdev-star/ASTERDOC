@@ -15,12 +15,14 @@
         <!-- Header Logo -->
         <ImageView
             android:id="@+id/ivWelcomeLogo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="160dp"
+            android:layout_height="80dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="32dp"
-            android:contentDescription="AsterDocs Logo"
-            android:src="@drawable/ic_asterdocs_logo" />
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:contentDescription="Asterine Logo"
+            android:src="@drawable/asterine_logo_image" />
 
         <TextView
             android:id="@+id/tvWelcomeStep"
@@ -38,14 +40,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/surface_light"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
             app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
                 android:orientation="vertical"
                 android:padding="24dp">
 
@@ -53,49 +55,68 @@
                     android:id="@+id/tvSlideTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="Welcome, User! 🎉"
+                    android:text="Welcome"
                     android:textColor="@color/text_primary"
-                    android:textSize="24sp"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvSlideSubtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center"
-                    android:text="Your AsterDocs toolbox is ready."
+                    android:layout_marginTop="8dp"
+                    android:text="Subtitle"
                     android:textColor="@color/primary"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvSlideBody"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:gravity="center"
-                    android:lineSpacingExtra="4dp"
-                    android:text="You now have access to a complete suite of document tools designed to help you create, convert, scan, edit, sign, and manage PDFs with ease."
+                    android:layout_marginTop="12dp"
+                    android:text="Description"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="4dp" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Navigation Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnWelcomeNext"
+        <View
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Next"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWelcomePrev"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Previous"
+                android:textSize="16sp"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWelcomeNext"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Next"
+                android:textSize="16sp"
+                app:cornerRadius="12dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

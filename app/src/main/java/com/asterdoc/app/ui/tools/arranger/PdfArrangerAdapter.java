@@ -108,3 +108,4 @@ public class PdfArrangerAdapter extends RecyclerView.Adapter<PdfArrangerAdapter.
         }
     }
 }
+

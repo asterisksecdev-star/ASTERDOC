@@ -1,0 +1,70 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="180dp"
+    android:height="180dp"
+    android:viewportWidth="180"
+    android:viewportHeight="180">
+
+    <!-- Glowing Background Aura -->
+    <path
+        android:fillColor="#1F2330"
+        android:pathData="M90,20 C128.66,20 160,51.34 160,90 C160,128.66 128.66,160 90,160 C51.34,160 20,128.66 20,90 C20,51.34 51.34,20 90,20 Z" />
+
+    <!-- Floating Background Document 1 (Left Tilt) -->
+    <path
+        android:fillColor="#282C3D"
+        android:pathData="M38,52 L68,42 C70.2,41.3 72.5,42.5 73.2,44.7 L88.2,89.7 C88.9,91.9 87.7,94.2 85.5,94.9 L55.5,104.9 C53.3,105.6 51,104.4 50.3,102.2 L35.3,57.2 C34.6,55 35.8,52.7 38,52 Z" />
+
+    <!-- Floating Background Document 2 (Right Tilt) -->
+    <path
+        android:fillColor="#2D3246"
+        android:pathData="M112,48 L142,58 C144.2,58.7 145.4,61 144.7,63.2 L129.7,108.2 C129,110.4 126.7,111.6 124.5,110.9 L94.5,100.9 C92.3,100.2 91.1,97.9 91.8,95.7 L106.8,50.7 C107.5,48.5 109.8,47.3 112,48 Z" />
+
+    <!-- Character Body & Shirt (3D Aesthetic Stylized Character) -->
+    <path
+        android:fillColor="#4A72FF"
+        android:pathData="M60,118 C50,124 42,138 40,155 L140,155 C138,138 130,124 120,118 Z" />
+    <!-- Character Collar -->
+    <path
+        android:fillColor="#3B59C9"
+        android:pathData="M78,118 L90,132 L102,118 Z" />
+
+    <!-- Character Head -->
+    <path
+        android:fillColor="#FFC8A2"
+        android:pathData="M72,75 C68,75 64,80 64,88 C64,96 70,102 78,104 L78,110 L102,110 L102,104 C110,102 116,96 116,88 C116,80 112,75 108,75 Z" />
+    <!-- Character Hair -->
+    <path
+        android:fillColor="#212433"
+        android:pathData="M68,78 C64,72 68,62 76,60 C84,58 96,58 104,62 C112,66 116,74 112,80 C108,72 98,68 90,68 C82,68 72,72 68,78 Z" />
+
+    <!-- Surprise Exclamation Badges !! -->
+    <path
+        android:fillColor="#FF4D30"
+        android:pathData="M124,56 C124,53.8 125.8,52 128,52 C130.2,52 132,53.8 132,56 L131,70 L125,70 Z M128,74 C126.3,74 125,75.3 125,77 C125,78.7 126.3,80 128,80 C129.7,80 131,78.7 131,77 C131,75.3 129.7,74 128,74 Z" />
+    <path
+        android:fillColor="#FF4D30"
+        android:pathData="M136,56 C136,53.8 137.8,52 140,52 C142.2,52 144,53.8 144,56 L143,70 L137,70 Z M140,74 C138.3,74 137,75.3 137,77 C137,78.7 138.3,80 140,80 C141.7,80 143,78.7 143,77 C143,75.3 141.7,74 140,74 Z" />
+
+    <!-- Main Empty Red Folder -->
+    <path
+        android:fillColor="#3D445C"
+        android:pathData="M45,95 C42.8,95 41,96.8 41,99 L41,146 C41,148.2 42.8,150 45,150 L135,150 C137.2,150 139,148.2 139,146 L139,105 C139,102.8 137.2,101 135,101 L85,101 L75,95 Z" />
+    <!-- Front Folder Panel (Vibrant Coral Red) -->
+    <path
+        android:fillColor="#FF4D30"
+        android:pathData="M40,104 C37.8,104 36,105.8 36,108 L36,148 C36,150.2 37.8,152 40,152 L140,152 C142.2,152 144,150.2 144,148 L144,108 C144,105.8 142.2,104 140,104 Z" />
+
+    <!-- Empty Badge Symbol inside Folder (Crisp White Circle with Red X) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M90,114 C98.28,114 105,120.72 105,129 C105,137.28 98.28,144 90,144 C81.72,144 75,137.28 75,129 C75,120.72 81.72,114 90,114 Z" />
+
+    <!-- Aesthetic Floating Magic Sparkles & Motion Lines -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M32,38 L35,43 L40,40 L37,45 L42,48 L36,49 L35,55 L32,50 L26,51 L30,46 Z" />
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M152,90 L154,94 L158,92 L155,96 L159,99 L154,100 L153,104 L151,100 L147,101 L150,97 Z" />
+
+</vector>

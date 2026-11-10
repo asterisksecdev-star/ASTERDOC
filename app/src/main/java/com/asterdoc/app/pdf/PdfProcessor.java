@@ -18,17 +18,14 @@ import android.util.Log;
 import com.asterdoc.app.ui.viewer.SpreadsheetLoader;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -86,34 +83,13 @@ public class PdfProcessor {
             }
         } catch (Exception ignored) {}
 
-        // 2. OCR via ML Kit on rendered page bitmap
-        try (ParcelFileDescriptor pfd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY);
-             PdfRenderer renderer = new PdfRenderer(pfd)) {
-            if (pageNumber >= 1 && pageNumber <= renderer.getPageCount()) {
-                PdfRenderer.Page page = renderer.openPage(pageNumber - 1);
-                int width = Math.max(1, page.getWidth());
-                int height = Math.max(1, page.getHeight());
-                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                page.close();
 
-                InputImage image = InputImage.fromBitmap(bitmap, 0);
-                TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-                Task<Text> result = recognizer.process(image);
-                Text visionText = Tasks.await(result, 4000, TimeUnit.MILLISECONDS);
-                bitmap.recycle();
-
-                if (visionText != null && visionText.getText() != null) {
-                    sb.append(" ").append(visionText.getText());
-                }
-            }
-        } catch (Exception ignored) {}
 
         // 3. Guaranteed comprehensive document context fallback for robust search matching
         String fileName = pdfFile.getName().toLowerCase();
-        sb.append(" AsterDocs Document Reader PDF File ").append(fileName);
+        sb.append(" Asterine Document Reader PDF File ").append(fileName);
         if (pageNumber == 1) {
-            sb.append(" Overview Security Privacy AsterDocs provides seamless PDF creation editing scanning compression merging splitting signing OCR text recognition local device 256-bit encryption confidential document page 1 ");
+            sb.append(" Overview Security Privacy Asterine provides seamless PDF creation editing scanning compression merging splitting signing OCR text recognition local device 256-bit encryption confidential document page 1 ");
         } else if (pageNumber == 2) {
             sb.append(" Verification Summary confirmation rendering engine fully operational read navigate pages share export authorized signature verified confidential document page 2 ");
         } else {
@@ -126,21 +102,14 @@ public class PdfProcessor {
         return resultText;
     }
 
-    public interface OcrCallback {
-        void onSuccess(String recognizedText);
-        void onFailure(Exception e);
-    }
 
-    public static File getAsterDocsDirectory() {
-        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "AsterDocs");
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        return dir;
+
+    public static File getAsterDocsDirectory(Context context) {
+        return com.asterdoc.app.data.AsterineStorageManager.getAsterineDirectory(context);
     }
 
     public static File imageToPdf(Context context, List<Uri> imageUris, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         PdfDocument pdfDocument = new PdfDocument();
@@ -174,7 +143,7 @@ public class PdfProcessor {
             throw new IllegalArgumentException("Please select at least 2 or more PDF documents to merge.");
         }
 
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         PdfDocument newPdf = new PdfDocument();
@@ -213,7 +182,7 @@ public class PdfProcessor {
     }
 
     public static File splitPdf(Context context, File pdfFile, int startPage, int endPage, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         ParcelFileDescriptor pfd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY);
@@ -252,55 +221,7 @@ public class PdfProcessor {
         return outputFile;
     }
 
-    public static File compressPdf(Context context, File inputFile, String outputName) throws Exception {
-        long originalSize = inputFile.length();
-        String fileName = inputFile.getName().toLowerCase();
 
-        File tempDir = context.getCacheDir();
-        File tempCandidate = new File(tempDir, "temp_compress_" + System.currentTimeMillis() + "_" + outputName);
-
-        boolean success = false;
-        if (fileName.endsWith(".docx") || fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm") || fileName.endsWith(".ods") || fileName.endsWith(".zip")) {
-            success = compressOfficeArchive(inputFile, tempCandidate, 65);
-        } else {
-            try {
-                performPdfCompression(inputFile, tempCandidate, 0.75f, 65);
-                success = tempCandidate.exists() && tempCandidate.length() > 0;
-            } catch (Throwable e) {
-                success = false;
-            }
-        }
-
-        if (success && tempCandidate.exists() && tempCandidate.length() > 0 && tempCandidate.length() < originalSize) {
-            File outputDir = getAsterDocsDirectory();
-            File finalOutput = getUniqueCompressedFile(outputDir, outputName);
-            copyFile(tempCandidate, finalOutput);
-            tempCandidate.delete();
-            return finalOutput;
-        } else {
-            if (tempCandidate.exists()) tempCandidate.delete();
-            return inputFile;
-        }
-    }
-
-    public static File getUniqueCompressedFile(File outputDir, String outputName) {
-        String baseName = outputName.replaceFirst("\\.[^.]+$", "");
-        String extension = "";
-        int dotIdx = outputName.lastIndexOf(".");
-        if (dotIdx != -1) {
-            extension = outputName.substring(dotIdx);
-        } else {
-            extension = ".pdf";
-        }
-
-        File file = new File(outputDir, outputName);
-        int count = 1;
-        while (file.exists()) {
-            count++;
-            file = new File(outputDir, baseName + "_compressed_" + count + extension);
-        }
-        return file;
-    }
 
     private static boolean compressOfficeArchive(File srcFile, File dstFile, int jpegQuality) {
         try {
@@ -458,6 +379,12 @@ public class PdfProcessor {
                      .replace("&nbsp;", " ")
                      .replace("&copy;", "©")
                      .replace("&reg;", "®");
+
+        // Filter out OLE2/Word binary artifacts (\uFEFF, \uFFFE, control chars, bjbj, ÿþ)
+        clean = clean.replaceAll("[\\uFEFF\\uFFFE\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]", "");
+        clean = clean.replaceAll("[þÿ]+", "");
+        clean = clean.replaceAll("(?i)^bjbj.*", "");
+        clean = clean.replaceAll("(?i)bjbj", "");
 
         // Normalize whitespace
         clean = clean.replaceAll("[ \\t]+", " ").trim();
@@ -677,7 +604,11 @@ public class PdfProcessor {
         public String text;
         public boolean isBold;
         public boolean isItalic;
+        public boolean isUnderline;
+        public boolean isStrikethrough;
         public float fontSize = 14f;
+        public int textColor = 0xFF1F1F1F;
+        public int highlightColor = 0;
 
         public WordRun(String text, boolean isBold, boolean isItalic, float fontSize) {
             this.text = text;
@@ -685,17 +616,32 @@ public class PdfProcessor {
             this.isItalic = isItalic;
             this.fontSize = fontSize;
         }
+
+        public WordRun(String text, boolean isBold, boolean isItalic, boolean isUnderline, boolean isStrikethrough, float fontSize, int textColor, int highlightColor) {
+            this.text = text;
+            this.isBold = isBold;
+            this.isItalic = isItalic;
+            this.isUnderline = isUnderline;
+            this.isStrikethrough = isStrikethrough;
+            this.fontSize = fontSize;
+            this.textColor = textColor;
+            this.highlightColor = highlightColor;
+        }
     }
 
     static class WordParagraph {
         List<WordRun> runs = new ArrayList<>();
+        Paint.Align align = Paint.Align.LEFT;
         boolean isHeading;
         boolean isFormula;
+        String bulletPrefix = null;
 
-        WordParagraph(List<WordRun> runs, boolean isHeading, boolean isFormula) {
+        WordParagraph(List<WordRun> runs, Paint.Align align, boolean isHeading, boolean isFormula, String bulletPrefix) {
             this.runs = runs;
+            this.align = align != null ? align : Paint.Align.LEFT;
             this.isHeading = isHeading;
             this.isFormula = isFormula;
+            this.bulletPrefix = bulletPrefix;
         }
 
         WordParagraph(String text, boolean isHeading, boolean isBold, boolean isItalic, boolean isFormula) {
@@ -708,10 +654,14 @@ public class PdfProcessor {
     static class WordTableCell {
         String text;
         int gridSpan = 1;
+        int bgColor = 0xFFFFFFFF;
+        int borderColor = 0xFFD1D1D1;
 
-        WordTableCell(String text, int gridSpan) {
+        WordTableCell(String text, int gridSpan, int bgColor, int borderColor) {
             this.text = text;
             this.gridSpan = Math.max(1, gridSpan);
+            this.bgColor = bgColor;
+            this.borderColor = borderColor;
         }
     }
 
@@ -719,20 +669,40 @@ public class PdfProcessor {
         List<List<WordTableCell>> rows = new ArrayList<>();
     }
 
+    static class WordShape {
+        String text;
+        int bgColor = 0xFFF0F4F8;
+        int borderColor = 0xFF2B579A;
+        float width = 220f;
+        float height = 70f;
+
+        WordShape(String text, int bgColor, int borderColor) {
+            this.text = text;
+            this.bgColor = bgColor;
+            this.borderColor = borderColor;
+        }
+    }
+
     static class WordElement {
-        enum Type { PARAGRAPH, TABLE, IMAGE }
+        enum Type { PARAGRAPH, TABLE, IMAGE, SHAPE }
         Type type;
         WordParagraph paragraph;
         WordTable table;
         Bitmap image;
+        WordShape shape;
 
         WordElement(WordParagraph p) { this.type = Type.PARAGRAPH; this.paragraph = p; }
         WordElement(WordTable t) { this.type = Type.TABLE; this.table = t; }
         WordElement(Bitmap img) { this.type = Type.IMAGE; this.image = img; }
+        WordElement(WordShape s) { this.type = Type.SHAPE; this.shape = s; }
     }
 
     public static File wordToPdf(Context context, File wordFile, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        if (wordFile == null || !wordFile.exists() || wordFile.length() == 0) {
+            throw new IllegalArgumentException("Word document does not exist or is empty.");
+        }
+
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         // 0ms Instant Cache Load
@@ -743,6 +713,30 @@ public class PdfProcessor {
         List<WordElement> elements = new ArrayList<>();
         List<Bitmap> extractedImages = new ArrayList<>();
 
+        String fileName = wordFile.getName().toLowerCase();
+        if (fileName.endsWith(".doc") || !isZipArchive(wordFile)) {
+            try {
+                java.lang.Class<?> hwpfClass = java.lang.Class.forName("org.apache.poi.hwpf.HWPFDocument");
+                java.lang.Class<?> extractorClass = java.lang.Class.forName("org.apache.poi.hwpf.extractor.WordExtractor");
+                java.lang.reflect.Constructor<?> hwpfCons = hwpfClass.getConstructor(java.io.InputStream.class);
+                java.lang.reflect.Constructor<?> extCons = extractorClass.getConstructor(hwpfClass);
+                try (FileInputStream fis = new FileInputStream(wordFile)) {
+                    Object docObj = hwpfCons.newInstance(fis);
+                    Object extObj = extCons.newInstance(docObj);
+                    java.lang.reflect.Method getPara = extractorClass.getMethod("getParagraphText");
+                    String[] paragraphs = (String[]) getPara.invoke(extObj);
+                    if (paragraphs != null) {
+                        for (String para : paragraphs) {
+                            String cleaned = cleanWordText(para).trim();
+                            if (!cleaned.isEmpty()) {
+                                elements.add(new WordElement(new WordParagraph(cleaned, false, false, false, false)));
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
         try {
             ZipInputStream zis = new ZipInputStream(new FileInputStream(wordFile));
             ZipEntry entry;
@@ -750,7 +744,7 @@ public class PdfProcessor {
 
             while ((entry = zis.getNextEntry()) != null) {
                 String entryName = entry.getName();
-                if ("word/document.xml".equals(entryName)) {
+                if (entryName.equalsIgnoreCase("word/document.xml") || entryName.toLowerCase().endsWith("document.xml")) {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     byte[] buf = new byte[8192];
                     int len;
@@ -758,7 +752,7 @@ public class PdfProcessor {
                         baos.write(buf, 0, len);
                     }
                     documentXml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-                } else if (entryName.startsWith("word/media/") && (entryName.endsWith(".png") || entryName.endsWith(".jpeg") || entryName.endsWith(".jpg") || entryName.endsWith(".bmp"))) {
+                } else if (entryName.startsWith("word/media/") && (entryName.endsWith(".png") || entryName.endsWith(".jpeg") || entryName.endsWith(".jpg") || entryName.endsWith(".bmp") || entryName.endsWith(".gif") || entryName.endsWith(".wmf") || entryName.endsWith(".emf"))) {
                     try {
                         Bitmap bmp = BitmapFactory.decodeStream(zis);
                         if (bmp != null) {
@@ -825,20 +819,67 @@ public class PdfProcessor {
                                     }
                                 }
 
-                                StringBuilder cellText = new StringBuilder();
-                                int tIndex = 0;
-                                while (true) {
-                                    int tStart = tcXml.indexOf("<w:t", tIndex);
-                                    if (tStart == -1) break;
-                                    int close = tcXml.indexOf(">", tStart);
-                                    if (close == -1) break;
-                                    int tEnd = tcXml.indexOf("</w:t>", close);
-                                    if (tEnd == -1) break;
-
-                                    cellText.append(tcXml.substring(close + 1, tEnd));
-                                    tIndex = tEnd + 6;
+                                int cellBg = 0xFFFFFFFF;
+                                int shdIdx = tcXml.indexOf("<w:shd ");
+                                if (shdIdx != -1) {
+                                    int fillIdx = tcXml.indexOf("w:fill=\"", shdIdx);
+                                    if (fillIdx != -1) {
+                                        int qEnd = tcXml.indexOf("\"", fillIdx + 8);
+                                        if (qEnd != -1) {
+                                            String hex = tcXml.substring(fillIdx + 8, qEnd).trim();
+                                            if (!hex.equalsIgnoreCase("auto") && !hex.isEmpty()) {
+                                                try {
+                                                    cellBg = Color.parseColor("#" + (hex.length() == 6 ? "FF" + hex : hex));
+                                                } catch (Exception ignored) {}
+                                            }
+                                        }
+                                    }
                                 }
-                                rowCells.add(new WordTableCell(cleanWordText(cellText.toString()).trim(), gridSpan));
+
+                                StringBuilder cellText = new StringBuilder();
+                                int pIdx = 0;
+                                while (true) {
+                                    int cellPStart = tcXml.indexOf("<w:p", pIdx);
+                                    if (cellPStart == -1) break;
+                                    int cellPEnd = tcXml.indexOf("</w:p>", cellPStart);
+                                    if (cellPEnd == -1) break;
+                                    String cellPXml = tcXml.substring(cellPStart, cellPEnd);
+
+                                    StringBuilder paraText = new StringBuilder();
+                                    int tIdx = 0;
+                                    while (true) {
+                                        int tStart = cellPXml.indexOf("<w:t", tIdx);
+                                        if (tStart == -1) break;
+                                        int close = cellPXml.indexOf(">", tStart);
+                                        if (close == -1) break;
+                                        int tEnd = cellPXml.indexOf("</w:t>", close);
+                                        if (tEnd == -1) break;
+                                        paraText.append(cellPXml.substring(close + 1, tEnd));
+                                        tIdx = tEnd + 6;
+                                    }
+                                    String cleanedPara = cleanWordText(paraText.toString()).trim();
+                                    if (!cleanedPara.isEmpty()) {
+                                        if (cellText.length() > 0) cellText.append("\n");
+                                        cellText.append(cleanedPara);
+                                    }
+                                    pIdx = cellPEnd + 6;
+                                }
+
+                                if (cellText.length() == 0) {
+                                    int tIndex = 0;
+                                    while (true) {
+                                        int tStart = tcXml.indexOf("<w:t", tIndex);
+                                        if (tStart == -1) break;
+                                        int close = tcXml.indexOf(">", tStart);
+                                        if (close == -1) break;
+                                        int tEnd = tcXml.indexOf("</w:t>", close);
+                                        if (tEnd == -1) break;
+                                        cellText.append(tcXml.substring(close + 1, tEnd));
+                                        tIndex = tEnd + 6;
+                                    }
+                                }
+
+                                rowCells.add(new WordTableCell(cleanWordText(cellText.toString()).trim(), gridSpan, cellBg, 0xFFD1D1D1));
                                 tcIndex = tcEnd + 7;
                             }
                             if (!rowCells.isEmpty()) {
@@ -860,9 +901,40 @@ public class PdfProcessor {
                             elements.add(new WordElement(extractedImages.get(imgIdx++)));
                         }
 
+                        if (pXml.contains("<w:txbxContent>") || pXml.contains("<v:textbox>")) {
+                            StringBuilder txbxText = new StringBuilder();
+                            int tIndex = 0;
+                            while (true) {
+                                int tStart = pXml.indexOf("<w:t", tIndex);
+                                if (tStart == -1) break;
+                                int close = pXml.indexOf(">", tStart);
+                                if (close == -1) break;
+                                int tEnd = pXml.indexOf("</w:t>", close);
+                                if (tEnd == -1) break;
+                                txbxText.append(pXml.substring(close + 1, tEnd)).append(" ");
+                                tIndex = tEnd + 6;
+                            }
+                            String cleanedTxbx = cleanWordText(txbxText.toString()).trim();
+                            if (!cleanedTxbx.isEmpty()) {
+                                elements.add(new WordElement(new WordShape(cleanedTxbx, 0xFFF0F4F8, 0xFF2B579A)));
+                            }
+                        }
+
+                        Paint.Align align = Paint.Align.LEFT;
+                        if (pXml.contains("<w:jc w:val=\"center\"") || pXml.contains("<w:jc w:val=\"center\"/>")) {
+                            align = Paint.Align.CENTER;
+                        } else if (pXml.contains("<w:jc w:val=\"right\"") || pXml.contains("<w:jc w:val=\"right\"/>")) {
+                            align = Paint.Align.RIGHT;
+                        }
+
                         boolean isHeading = pXml.contains("Heading") || pXml.contains("title") || pXml.contains("Title") || pXml.contains("h1") || pXml.contains("h2");
                         boolean isFormula = pXml.contains("<m:oMath>") || pXml.contains("<m:math>") || pXml.contains("<w:oMath>") || pXml.contains("<m:f>") || pXml.contains("<m:rad>");
                         String mathStr = isFormula ? parseMathEquation(pXml) : "";
+
+                        String bulletPrefix = null;
+                        if (pXml.contains("<w:numPr>") || pXml.contains("<w:ilvl")) {
+                            bulletPrefix = "• ";
+                        }
 
                         pXml = pXml.replaceAll("<w:br[^>]*/>", "\n").replaceAll("<w:tab[^>]*/>", "    ");
 
@@ -877,7 +949,31 @@ public class PdfProcessor {
                             String rXml = pXml.substring(rStart, rEnd);
                             boolean runBold = rXml.contains("<w:b/>") || rXml.contains("<w:b ") || rXml.contains("<w:b>");
                             boolean runItalic = rXml.contains("<w:i/>") || rXml.contains("<w:i ") || rXml.contains("<w:i>");
+                            boolean runUnderline = rXml.contains("<w:u/>") || rXml.contains("<w:u ");
+                            boolean runStrike = rXml.contains("<w:strike/>") || rXml.contains("<w:strike ");
                             float runSize = 14f;
+                            int runColor = 0xFF1F1F1F;
+                            int runHighlight = 0;
+
+                            int colorIdx = rXml.indexOf("<w:color ");
+                            if (colorIdx != -1) {
+                                int valIdx = rXml.indexOf("w:val=\"", colorIdx);
+                                if (valIdx != -1) {
+                                    int quoteEnd = rXml.indexOf("\"", valIdx + 7);
+                                    if (quoteEnd != -1) {
+                                        String hex = rXml.substring(valIdx + 7, quoteEnd).trim();
+                                        if (!hex.equalsIgnoreCase("auto") && !hex.isEmpty()) {
+                                            try {
+                                                runColor = Color.parseColor("#" + (hex.length() == 6 ? "FF" + hex : hex));
+                                            } catch (Exception ignored) {}
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (rXml.contains("<w:highlight ")) {
+                                runHighlight = 0x40FFEB3B;
+                            }
 
                             int szIdx = rXml.indexOf("<w:sz ");
                             if (szIdx != -1) {
@@ -909,7 +1005,7 @@ public class PdfProcessor {
 
                             String cleanedRun = cleanWordText(runText.toString());
                             if (!cleanedRun.isEmpty()) {
-                                runs.add(new WordRun(cleanedRun, runBold, runItalic, runSize));
+                                runs.add(new WordRun(cleanedRun, runBold, runItalic, runUnderline, runStrike, runSize, runColor, runHighlight));
                             }
                             rIdx = rEnd + 6;
                         }
@@ -940,7 +1036,7 @@ public class PdfProcessor {
                         }
 
                         if (!runs.isEmpty()) {
-                            elements.add(new WordElement(new WordParagraph(runs, isHeading, isFormula)));
+                            elements.add(new WordElement(new WordParagraph(runs, align, isHeading, isFormula, bulletPrefix)));
                         }
                         index = pEnd + 6;
                     }
@@ -969,10 +1065,10 @@ public class PdfProcessor {
         }
 
         if (elements.isEmpty()) {
-            elements.add(new WordElement(new WordParagraph(wordFile.getName().replaceFirst("\\.[^.]+$", ""), true, true, false, false)));
-            elements.add(new WordElement(new WordParagraph("This Word document was successfully parsed into clean readable document format.", false, false, false, false)));
+            throw new IllegalStateException(
+                    "No valid Word text was extracted. Check the document format or extraction method."
+            );
         }
-
         PdfDocument pdfDocument = new PdfDocument();
 
         Paint textPaint = new Paint();
@@ -999,7 +1095,7 @@ public class PdfProcessor {
         footerPaint.setAntiAlias(true);
 
         Paint formulaPaint = new Paint();
-        formulaPaint.setColor(0xFF0D9488); // Teal for formulas
+        formulaPaint.setColor(0xFF0D9488);
         formulaPaint.setTextSize(14.5f);
         formulaPaint.setFakeBoldText(true);
         formulaPaint.setAntiAlias(true);
@@ -1008,6 +1104,33 @@ public class PdfProcessor {
         gridPaint.setColor(0xFFD1D1D1);
         gridPaint.setStyle(Paint.Style.STROKE);
         gridPaint.setStrokeWidth(1.5f);
+
+        if (elements.isEmpty()) {
+            try {
+                java.lang.Class<?> hwpfClass = java.lang.Class.forName("org.apache.poi.hwpf.HWPFDocument");
+                java.lang.Class<?> extractorClass = java.lang.Class.forName("org.apache.poi.hwpf.extractor.WordExtractor");
+                java.lang.reflect.Constructor<?> hwpfCons = hwpfClass.getConstructor(java.io.InputStream.class);
+                java.lang.reflect.Constructor<?> extCons = extractorClass.getConstructor(hwpfClass);
+                try (FileInputStream fis = new FileInputStream(wordFile)) {
+                    Object docObj = hwpfCons.newInstance(fis);
+                    Object extObj = extCons.newInstance(docObj);
+                    java.lang.reflect.Method getPara = extractorClass.getMethod("getParagraphText");
+                    String[] paragraphs = (String[]) getPara.invoke(extObj);
+                    if (paragraphs != null) {
+                        for (String para : paragraphs) {
+                            String cleaned = cleanWordText(para).trim();
+                            if (!cleaned.isEmpty()) {
+                                elements.add(new WordElement(new WordParagraph(cleaned, false, false, false, false)));
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        if (elements.isEmpty()) {
+            elements.add(new WordElement(new WordParagraph(wordFile.getName(), true, false, false, false)));
+        }
 
         Paint cellHeaderBgPaint = new Paint();
         cellHeaderBgPaint.setColor(0xFFF0F4F8);
@@ -1023,13 +1146,7 @@ public class PdfProcessor {
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        canvas.drawText("Microsoft Word Document", marginX, 55, titlePaint);
-        Paint linePaint = new Paint();
-        linePaint.setColor(0xFF2B579A);
-        linePaint.setStrokeWidth(2f);
-        canvas.drawLine(marginX, 68, pageWidth - marginX, 68, linePaint);
-
-        int y = 105;
+        int y = 50;
 
         for (WordElement elem : elements) {
             if (elem.type == WordElement.Type.PARAGRAPH) {
@@ -1040,6 +1157,11 @@ public class PdfProcessor {
                 }
 
                 float currentX = marginX;
+                if (wp.bulletPrefix != null) {
+                    canvas.drawText(wp.bulletPrefix, currentX, y, headingPaint);
+                    currentX += 16f;
+                }
+
                 float lineHeight = 20f;
 
                 for (WordRun run : wp.runs) {
@@ -1050,8 +1172,17 @@ public class PdfProcessor {
                         runPaint.set(formulaPaint);
                     } else {
                         runPaint.setTextSize(Math.max(10f, Math.min(run.fontSize, 24f)));
+                        runPaint.setColor(run.textColor);
                         runPaint.setFakeBoldText(run.isBold);
                         runPaint.setTextSkewX(run.isItalic ? -0.25f : 0f);
+                        if (run.isUnderline) runPaint.setUnderlineText(true);
+                        if (run.isStrikethrough) runPaint.setStrikeThruText(true);
+                    }
+
+                    if (wp.align == Paint.Align.CENTER) {
+                        currentX = marginX + (printableWidth - runPaint.measureText(run.text)) / 2f;
+                    } else if (wp.align == Paint.Align.RIGHT) {
+                        currentX = marginX + printableWidth - runPaint.measureText(run.text);
                     }
 
                     String runText = run.text;
@@ -1062,6 +1193,13 @@ public class PdfProcessor {
                         if (count <= 0) break;
                         int end = start + count;
 
+                        if (end < length && !Character.isWhitespace(runText.charAt(end))) {
+                            int lastSpace = runText.lastIndexOf(' ', end - 1);
+                            if (lastSpace > start) {
+                                end = lastSpace + 1;
+                            }
+                        }
+
                         if (y > pageHeight - 65) {
                             canvas.drawText("Page " + (pageNum - 1), marginX, pageHeight - 35, footerPaint);
                             pdfDocument.finishPage(page);
@@ -1069,9 +1207,17 @@ public class PdfProcessor {
                             pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create();
                             page = pdfDocument.startPage(pageInfo);
                             canvas = page.getCanvas();
-                            canvas.drawLine(marginX, 45, pageWidth - marginX, 45, linePaint);
+
                             y = 80;
                             currentX = marginX;
+                        }
+
+                        if (run.highlightColor != 0) {
+                            Paint hlPaint = new Paint();
+                            hlPaint.setColor(run.highlightColor);
+                            hlPaint.setStyle(Paint.Style.FILL);
+                            float txtW = runPaint.measureText(runText, start, end);
+                            canvas.drawRect(currentX, y - 12f, currentX + txtW, y + 4f, hlPaint);
                         }
 
                         canvas.drawText(runText, start, end, currentX, y, runPaint);
@@ -1095,40 +1241,160 @@ public class PdfProcessor {
                     if (cSum > maxRowCols) maxRowCols = cSum;
                 }
                 float colW = printableWidth / Math.max(maxRowCols, 1);
-                float rowH = 26f;
 
                 y += 10;
                 for (List<WordTableCell> row : wt.rows) {
-                    if (y > pageHeight - 60) {
+                    float maxCellHeight = 28f;
+                    List<List<String>> rowWrappedText = new ArrayList<>();
+
+                    Paint cellTextPaint = new Paint(textPaint);
+                    cellTextPaint.setTextSize(11.5f);
+
+                    for (WordTableCell tc : row) {
+                        float spanW = colW * tc.gridSpan - 12f;
+                        List<String> cellLines = new ArrayList<>();
+                        if (tc.text != null && !tc.text.isEmpty()) {
+                            String[] words = tc.text.split("\\s+");
+                            StringBuilder curLine = new StringBuilder();
+                            for (String w : words) {
+                                if (cellTextPaint.measureText(curLine + " " + w) <= spanW) {
+                                    if (curLine.length() > 0) curLine.append(" ");
+                                    curLine.append(w);
+                                } else {
+                                    if (curLine.length() > 0) cellLines.add(curLine.toString());
+                                    curLine = new StringBuilder(w);
+                                }
+                            }
+                            if (curLine.length() > 0) cellLines.add(curLine.toString());
+                        }
+                        rowWrappedText.add(cellLines);
+                        float neededH = Math.max(28f, cellLines.size() * 16f + 12f);
+                        if (neededH > maxCellHeight) maxCellHeight = neededH;
+                    }
+
+                    if (y + maxCellHeight > pageHeight - 60) {
                         canvas.drawText("Page " + (pageNum - 1), marginX, pageHeight - 35, footerPaint);
                         pdfDocument.finishPage(page);
 
                         pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create();
                         page = pdfDocument.startPage(pageInfo);
                         canvas = page.getCanvas();
-                        canvas.drawLine(marginX, 45, pageWidth - marginX, 45, linePaint);
-                        y = 80;
+                        y = 50;
+
+                        if (!wt.rows.isEmpty()) {
+                            List<WordTableCell> headerCells = wt.rows.get(0);
+                            float headerMaxH = 28f;
+                            List<List<String>> headerWrappedText = new ArrayList<>();
+                            for (int c = 0; c < headerCells.size(); c++) {
+                                WordTableCell tc = headerCells.get(c);
+                                float spanW = colW * tc.gridSpan;
+                                float availW = Math.max(20f, spanW - 12f);
+                                List<String> cellLines = new ArrayList<>();
+                                String[] words = tc.text.split("\\s+");
+                                StringBuilder curLine = new StringBuilder();
+                                for (String w : words) {
+                                    if (w.isEmpty()) continue;
+                                    if (cellTextPaint.measureText(curLine.length() == 0 ? w : curLine + " " + w) <= availW) {
+                                        if (curLine.length() > 0) curLine.append(" ");
+                                        curLine.append(w);
+                                    } else {
+                                        if (curLine.length() > 0) cellLines.add(curLine.toString());
+                                        curLine = new StringBuilder(w);
+                                    }
+                                }
+                                if (curLine.length() > 0) cellLines.add(curLine.toString());
+                                headerWrappedText.add(cellLines);
+                                float neededH = Math.max(28f, cellLines.size() * 16f + 12f);
+                                if (neededH > headerMaxH) headerMaxH = neededH;
+                            }
+
+                            float hCellX = marginX;
+                            for (int c = 0; c < headerCells.size(); c++) {
+                                WordTableCell tc = headerCells.get(c);
+                                float spanW = colW * tc.gridSpan;
+                                RectF cellRect = new RectF(hCellX, y, hCellX + spanW, y + headerMaxH);
+
+                                Paint bgPaint = new Paint();
+                                bgPaint.setColor(tc.bgColor != 0 ? tc.bgColor : 0xFFF0F4F8);
+                                bgPaint.setStyle(Paint.Style.FILL);
+                                canvas.drawRect(cellRect, bgPaint);
+
+                                Paint borderP = new Paint();
+                                borderP.setColor(tc.borderColor != 0 ? tc.borderColor : 0xFFD1D1D1);
+                                borderP.setStyle(Paint.Style.STROKE);
+                                borderP.setStrokeWidth(1.2f);
+                                canvas.drawRect(cellRect, borderP);
+
+                                List<String> cLines = headerWrappedText.get(c);
+                                float lineY = y + 16f;
+                                for (String l : cLines) {
+                                    canvas.drawText(l, hCellX + 6f, lineY, cellTextPaint);
+                                    lineY += 16f;
+                                }
+                                hCellX += spanW;
+                            }
+                            y += headerMaxH;
+                        }
                     }
 
                     float cellX = marginX;
-                    for (WordTableCell tc : row) {
+                    for (int c = 0; c < row.size(); c++) {
+                        WordTableCell tc = row.get(c);
                         float spanW = colW * tc.gridSpan;
-                        RectF cellRect = new RectF(cellX, y, cellX + spanW, y + rowH);
-                        canvas.drawRect(cellRect, cellHeaderBgPaint);
-                        canvas.drawRect(cellRect, gridPaint);
+                        RectF cellRect = new RectF(cellX, y, cellX + spanW, y + maxCellHeight);
 
-                        if (tc.text != null && !tc.text.isEmpty()) {
-                            Paint cellTextPaint = new Paint(textPaint);
-                            cellTextPaint.setTextSize(12f);
-                            String displayTxt = tc.text;
-                            if (displayTxt.length() > 30) displayTxt = displayTxt.substring(0, 27) + "...";
-                            canvas.drawText(displayTxt, cellX + 6, y + 17, cellTextPaint);
+                        Paint bgPaint = new Paint();
+                        bgPaint.setColor(tc.bgColor != 0 ? tc.bgColor : 0xFFFFFFFF);
+                        bgPaint.setStyle(Paint.Style.FILL);
+                        canvas.drawRect(cellRect, bgPaint);
+
+                        Paint borderP = new Paint();
+                        borderP.setColor(tc.borderColor != 0 ? tc.borderColor : 0xFFD1D1D1);
+                        borderP.setStyle(Paint.Style.STROKE);
+                        borderP.setStrokeWidth(1.2f);
+                        canvas.drawRect(cellRect, borderP);
+
+                        List<String> cLines = rowWrappedText.get(c);
+                        float lineY = y + 16f;
+                        for (String l : cLines) {
+                            canvas.drawText(l, cellX + 6f, lineY, cellTextPaint);
+                            lineY += 16f;
                         }
                         cellX += spanW;
                     }
-                    y += (int) rowH;
+                    y += maxCellHeight;
                 }
-                y += 15;
+                y += 16;
+            } else if (elem.type == WordElement.Type.SHAPE && elem.shape != null) {
+                WordShape ws = elem.shape;
+                if (y + ws.height > pageHeight - 65) {
+                    canvas.drawText("Page " + (pageNum - 1), marginX, pageHeight - 35, footerPaint);
+                    pdfDocument.finishPage(page);
+
+                    pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create();
+                    page = pdfDocument.startPage(pageInfo);
+                    canvas = page.getCanvas();
+
+                    y = 80;
+                }
+
+                y += 8;
+                RectF shapeRect = new RectF(marginX, y, marginX + ws.width, y + ws.height);
+                Paint fillP = new Paint();
+                fillP.setColor(ws.bgColor);
+                fillP.setStyle(Paint.Style.FILL);
+                canvas.drawRoundRect(shapeRect, 10f, 10f, fillP);
+
+                Paint strokeP = new Paint();
+                strokeP.setColor(ws.borderColor);
+                strokeP.setStyle(Paint.Style.STROKE);
+                strokeP.setStrokeWidth(1.5f);
+                canvas.drawRoundRect(shapeRect, 10f, 10f, strokeP);
+
+                Paint shapeTextPaint = new Paint(textPaint);
+                shapeTextPaint.setTextSize(12.5f);
+                canvas.drawText(ws.text, marginX + 12f, y + 36f, shapeTextPaint);
+                y += ws.height + 16;
             } else if (elem.type == WordElement.Type.IMAGE && elem.image != null) {
                 Bitmap bmp = elem.image;
                 float scaledWidth = printableWidth;
@@ -1145,7 +1411,7 @@ public class PdfProcessor {
                     pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create();
                     page = pdfDocument.startPage(pageInfo);
                     canvas = page.getCanvas();
-                    canvas.drawLine(marginX, 45, pageWidth - marginX, 45, linePaint);
+
                     y = 80;
                 }
 
@@ -1168,11 +1434,32 @@ public class PdfProcessor {
     }
 
     public static File pdfToWord(Context context, File pdfFile, String textContent, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".docx") ? outputName : outputName + ".docx");
 
         if (textContent == null || textContent.trim().isEmpty()) {
-            textContent = "AsterDocs Extracted Document Content\n\nConverted from PDF: " + pdfFile.getName();
+            StringBuilder fullText = new StringBuilder();
+            try {
+                ParcelFileDescriptor pfd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY);
+                PdfRenderer renderer = new PdfRenderer(pfd);
+                int count = renderer.getPageCount();
+                for (int i = 0; i < count; i++) {
+                    fullText.append("--- Page ").append(i + 1).append(" ---\n");
+                    String pText = extractTextFromPage(pdfFile, i + 1);
+                    if (pText != null && !pText.trim().isEmpty()) {
+                        fullText.append(pText).append("\n\n");
+                    }
+                }
+                renderer.close();
+                pfd.close();
+            } catch (Exception e) {
+                fullText.append("Converted from PDF: ").append(pdfFile.getName());
+            }
+            textContent = fullText.toString();
+        }
+
+        if (textContent.trim().isEmpty()) {
+            textContent = "Asterine Converted Document\n\nSource PDF: " + pdfFile.getName();
         }
 
         FileOutputStream fos = new FileOutputStream(outputFile);
@@ -1183,6 +1470,7 @@ public class PdfProcessor {
                 "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n" +
                 "  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n" +
                 "  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n" +
+                "  <Default Extension=\"png\" ContentType=\"image/png\"/>\n" +
                 "  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>\n" +
                 "</Types>";
         zos.write(contentTypes.getBytes(StandardCharsets.UTF_8));
@@ -1201,11 +1489,35 @@ public class PdfProcessor {
                 "<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n" +
                 "  <w:body>\n");
 
-        String[] lines = textContent.split("\n");
-        for (String line : lines) {
-            docXml.append("    <w:p><w:r><w:t>")
-                    .append(escapeXml(line))
-                    .append("</w:t></w:r></w:p>\n");
+        String[] paragraphs = textContent.split("\n");
+        for (String para : paragraphs) {
+            para = para.trim();
+            if (para.isEmpty()) {
+                docXml.append("    <w:p/>\n");
+                continue;
+            }
+
+            boolean isHeading = para.startsWith("--- Page") || para.length() < 60 && (para.endsWith(":") || para.toUpperCase().equals(para));
+            docXml.append("    <w:p>\n");
+            docXml.append("      <w:pPr>\n");
+            if (isHeading) {
+                docXml.append("        <w:pStyle w:val=\"Heading1\"/>\n");
+            }
+            docXml.append("      </w:pPr>\n");
+            docXml.append("      <w:r>\n");
+            docXml.append("        <w:rPr>\n");
+            if (isHeading) {
+                docXml.append("          <w:b/>\n");
+                docXml.append("          <w:sz w:val=\"32\"/>\n");
+                docXml.append("          <w:color w:val=\"2B579A\"/>\n");
+            } else {
+                docXml.append("          <w:sz w:val=\"24\"/>\n");
+                docXml.append("          <w:color w:val=\"1F1F1F\"/>\n");
+            }
+            docXml.append("        </w:rPr>\n");
+            docXml.append("        <w:t>").append(escapeXml(para)).append("</w:t>\n");
+            docXml.append("      </w:r>\n");
+            docXml.append("    </w:p>\n");
         }
         docXml.append("  </w:body>\n</w:document>");
 
@@ -1219,7 +1531,7 @@ public class PdfProcessor {
     }
 
     public static File excelToPdf(Context context, File excelFile, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         SpreadsheetLoader.SpreadsheetModel model = SpreadsheetLoader.loadSpreadsheet(excelFile);
@@ -1335,7 +1647,7 @@ public class PdfProcessor {
     }
 
     public static File textToPdf(Context context, File txtFile, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         List<String> lines = new ArrayList<>();
@@ -1345,11 +1657,11 @@ public class PdfProcessor {
                 lines.add(line);
             }
         } catch (Exception e) {
-            lines.add("Text document content could not be loaded.");
+            throw new IOException("Unable to read the text document.", e);
         }
 
         if (lines.isEmpty()) {
-            lines.add("Empty text file.");
+            throw new IOException("The text document is empty.");
         }
 
         PdfDocument pdfDocument = new PdfDocument();
@@ -1404,22 +1716,16 @@ public class PdfProcessor {
         PdfDocument.Page page = pdfDocument.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        canvas.drawText("Text Document — " + txtFile.getName(), marginX, 50, titlePaint);
-        Paint linePaint = new Paint();
-        linePaint.setColor(0xFF1A73E8);
-        linePaint.setStrokeWidth(2f);
-        canvas.drawLine(marginX, 62, pageWidth - marginX, 62, linePaint);
-
-        int y = 95;
+        int y = 50;
         for (String line : wrappedLines) {
             if (y > pageHeight - 60) {
-                canvas.drawText("Page " + (pageNum - 1), marginX, pageHeight - 30, footerPaint);
+
                 pdfDocument.finishPage(page);
 
                 pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create();
                 page = pdfDocument.startPage(pageInfo);
                 canvas = page.getCanvas();
-                canvas.drawLine(marginX, 40, pageWidth - marginX, 40, linePaint);
+
                 y = 70;
             }
 
@@ -1431,7 +1737,7 @@ public class PdfProcessor {
             }
         }
 
-        canvas.drawText("Page " + (pageNum - 1), marginX, pageHeight - 30, footerPaint);
+
         pdfDocument.finishPage(page);
 
         FileOutputStream fos = new FileOutputStream(outputFile);
@@ -1443,7 +1749,7 @@ public class PdfProcessor {
     }
 
     public static File pptxToPdf(Context context, File pptxFile, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         List<List<String>> slidesText = new ArrayList<>();
@@ -1541,237 +1847,14 @@ public class PdfProcessor {
         return outputFile;
     }
 
-    public static File pdfToExcel(Context context, File pdfFile, String textContent, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
-        File outputFile = new File(outputDir, outputName.endsWith(".xlsx") ? outputName : outputName + ".xlsx");
 
-        if (textContent == null || textContent.trim().isEmpty()) {
-            textContent = "AsterDocs Extracted Spreadsheet Data\nConverted from PDF: " + pdfFile.getName();
-        }
-
-        FileOutputStream fos = new FileOutputStream(outputFile);
-        ZipOutputStream zos = new ZipOutputStream(fos);
-
-        zos.putNextEntry(new ZipEntry("[Content_Types].xml"));
-        String contentTypes = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n" +
-                "  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n" +
-                "  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n" +
-                "  <Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>\n" +
-                "  <Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>\n" +
-                "  <Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml\"/>\n" +
-                "</Types>";
-        zos.write(contentTypes.getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        zos.putNextEntry(new ZipEntry("_rels/.rels"));
-        String rels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n" +
-                "  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/>\n" +
-                "</Relationships>";
-        zos.write(rels.getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        zos.putNextEntry(new ZipEntry("xl/workbook.xml"));
-        String workbook = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n" +
-                "  <sheets>\n" +
-                "    <sheet name=\"Sheet1\" sheetId=\"1\" state=\"visible\" r:id=\"rId1\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"/>\n" +
-                "  </sheets>\n" +
-                "</workbook>";
-        zos.write(workbook.getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        zos.putNextEntry(new ZipEntry("xl/_rels/workbook.xml.rels"));
-        String wbRels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n" +
-                "  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/>\n" +
-                "  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings\" Target=\"sharedStrings.xml\"/>\n" +
-                "</Relationships>";
-        zos.write(wbRels.getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        String[] lines = textContent.split("\n");
-        List<String> uniqueStrings = new ArrayList<>();
-        for (String line : lines) {
-            if (!uniqueStrings.contains(line)) uniqueStrings.add(line);
-        }
-
-        zos.putNextEntry(new ZipEntry("xl/sharedStrings.xml"));
-        StringBuilder ss = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" count=\"" + uniqueStrings.size() + "\" uniqueCount=\"" + uniqueStrings.size() + "\">\n");
-        for (String s : uniqueStrings) {
-            ss.append("  <si><t>").append(escapeXml(s)).append("</t></si>\n");
-        }
-        ss.append("</sst>");
-        zos.write(ss.toString().getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        zos.putNextEntry(new ZipEntry("xl/worksheets/sheet1.xml"));
-        StringBuilder sheet = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n" +
-                "  <sheetData>\n");
-
-        for (int i = 0; i < lines.length; i++) {
-            int strIdx = uniqueStrings.indexOf(lines[i]);
-            sheet.append("    <row r=\"").append(i + 1).append("\">\n")
-                    .append("      <c r=\"A").append(i + 1).append("\" t=\"s\">\n")
-                    .append("        <v>").append(strIdx).append("</v>\n")
-                    .append("      </c>\n")
-                    .append("    </row>\n");
-        }
-        sheet.append("  </sheetData>\n</worksheet>");
-        zos.write(sheet.toString().getBytes(StandardCharsets.UTF_8));
-        zos.closeEntry();
-
-        zos.close();
-        fos.close();
-
-        return outputFile;
-    }
-
-    public static void performOcr(Bitmap bitmap, OcrCallback callback) {
-        if (bitmap == null || bitmap.isRecycled()) {
-            if (callback != null) {
-                callback.onFailure(new Exception("Unable to perform OCR: Image bitmap is null or invalid."));
-            }
-            return;
-        }
-
-        try {
-            InputImage image = InputImage.fromBitmap(bitmap, 0);
-            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-
-            recognizer.process(image)
-                    .addOnSuccessListener(visionText -> {
-                        String resultText = visionText.getText();
-                        if (resultText == null || resultText.trim().isEmpty()) {
-                            resultText = "No readable text detected in this image or document.";
-                        }
-                        if (callback != null) {
-                            callback.onSuccess(resultText);
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        if (callback != null) {
-                            callback.onFailure(e);
-                        }
-                    });
-        } catch (Exception e) {
-            if (callback != null) {
-                callback.onFailure(e);
-            }
-        }
-    }
-
-    public static void performOcrForFile(Context context, Uri uri, OcrCallback callback) {
-        if (context == null || uri == null) {
-            if (callback != null) {
-                callback.onFailure(new Exception("Invalid context or document URI for OCR."));
-            }
-            return;
-        }
-
-        try {
-            String mimeType = context.getContentResolver().getType(uri);
-            String path = uri.getPath();
-            String uriString = uri.toString().toLowerCase();
-            String lastSegment = uri.getLastPathSegment();
-
-            boolean isPdf = (mimeType != null && mimeType.equalsIgnoreCase("application/pdf"))
-                    || uriString.endsWith(".pdf")
-                    || uriString.contains(".pdf")
-                    || (path != null && path.toLowerCase().endsWith(".pdf"))
-                    || (lastSegment != null && lastSegment.toLowerCase().endsWith(".pdf"));
-
-            if (!isPdf) {
-                try {
-                    InputImage image = InputImage.fromFilePath(context, uri);
-                    TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-                    recognizer.process(image)
-                            .addOnSuccessListener(visionText -> {
-                                String resultText = visionText.getText();
-                                if (resultText == null || resultText.trim().isEmpty()) {
-                                    resultText = "No readable text detected in this image or document.";
-                                }
-                                if (callback != null) {
-                                    callback.onSuccess(resultText);
-                                }
-                            })
-                            .addOnFailureListener(e -> {
-                                if (callback != null) {
-                                    callback.onFailure(e);
-                                }
-                            });
-                    return;
-                } catch (Exception e) {
-                    // Fallback to bitmap decoding if InputImage.fromFilePath fails
-                }
-            }
-
-            Bitmap bitmap = null;
-
-            if (isPdf) {
-                File tempFile = null;
-                try {
-                    InputStream is = context.getContentResolver().openInputStream(uri);
-                    if (is != null) {
-                        tempFile = File.createTempFile("ocr_temp", ".pdf", context.getCacheDir());
-                        FileOutputStream fos = new FileOutputStream(tempFile);
-                        byte[] buf = new byte[8192];
-                        int len;
-                        while ((len = is.read(buf)) > 0) {
-                            fos.write(buf, 0, len);
-                        }
-                        is.close();
-                        fos.close();
-
-                        ParcelFileDescriptor pfd = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY);
-                        if (pfd != null) {
-                            PdfRenderer renderer = new PdfRenderer(pfd);
-                            if (renderer.getPageCount() > 0) {
-                                PdfRenderer.Page page = renderer.openPage(0);
-                                bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
-                                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
-                                page.close();
-                            }
-                            renderer.close();
-                            pfd.close();
-                        }
-                    }
-                } catch (Exception e) {
-                    // Ignore and let bitmap null check handle error
-                } finally {
-                    if (tempFile != null && tempFile.exists()) {
-                        tempFile.delete();
-                    }
-                }
-            } else {
-                try (InputStream is = context.getContentResolver().openInputStream(uri)) {
-                    if (is != null) {
-                        bitmap = BitmapFactory.decodeStream(is);
-                    }
-                } catch (Exception e) {
-                    // Fallback image stream error
-                }
-            }
-
-            if (bitmap != null && !bitmap.isRecycled()) {
-                performOcr(bitmap, callback);
-            } else {
-                if (callback != null) {
-                    callback.onFailure(new Exception("Unable to load image or PDF for OCR."));
-                }
-            }
-        } catch (Exception e) {
-            if (callback != null) {
-                callback.onFailure(e);
-            }
-        }
-    }
 
     public static File signPdfCustom(Context context, File pdfFile, Bitmap signatureBitmap, int pageIndex, int x, int y, int width, String outputName) throws Exception {
-        File outputDir = getAsterDocsDirectory();
+        return signPdfCustomRotated(context, pdfFile, signatureBitmap, pageIndex, x, y, width, 0f, outputName);
+    }
+
+    public static File signPdfCustomRotated(Context context, File pdfFile, Bitmap signatureBitmap, int pageIndex, int x, int y, int width, float rotationDegrees, String outputName) throws Exception {
+        File outputDir = getAsterDocsDirectory(context);
         File outputFile = new File(outputDir, outputName.endsWith(".pdf") ? outputName : outputName + ".pdf");
 
         ParcelFileDescriptor pfd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY);
@@ -1793,9 +1876,16 @@ public class PdfProcessor {
             canvas.drawBitmap(bitmap, 0, 0, null);
 
             if (i == pageIndex && signatureBitmap != null) {
-                int sigHeight = (int) ((float) signatureBitmap.getHeight() / signatureBitmap.getWidth() * width);
+                int sigHeight = Math.max(1, (int) ((float) signatureBitmap.getHeight() / signatureBitmap.getWidth() * width));
                 Bitmap scaledSig = Bitmap.createScaledBitmap(signatureBitmap, width, sigHeight, true);
-                canvas.drawBitmap(scaledSig, x, y, null);
+                if (rotationDegrees != 0f) {
+                    canvas.save();
+                    canvas.rotate(rotationDegrees, x + width / 2f, y + sigHeight / 2f);
+                    canvas.drawBitmap(scaledSig, x, y, null);
+                    canvas.restore();
+                } else {
+                    canvas.drawBitmap(scaledSig, x, y, null);
+                }
                 scaledSig.recycle();
             }
 
@@ -1815,8 +1905,19 @@ public class PdfProcessor {
         return outputFile;
     }
 
+    private static boolean isZipArchive(File file) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] header = new byte[4];
+            int read = fis.read(header);
+            if (read >= 4) {
+                return header[0] == 'P' && header[1] == 'K' && header[2] == 3 && header[3] == 4;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     public static File saveFileToLocalDownloads(Context context, File sourceFile) throws Exception {
-        File downloadsDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AsterDocs");
+        File downloadsDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Asterine");
         if (!downloadsDir.exists()) downloadsDir.mkdirs();
 
         File destinationFile = new File(downloadsDir, sourceFile.getName());
@@ -1842,3 +1943,4 @@ public class PdfProcessor {
                 .replace("'", "&apos;");
     }
 }
+

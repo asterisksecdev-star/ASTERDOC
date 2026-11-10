@@ -132,6 +132,11 @@
         </activity>
 
         <activity
+            android:name=".ui.files.CategoryFileListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASTERDOC" />
+
+        <activity
             android:name=".ui.tools.ToolActionActivity"
             android:exported="false"
             android:theme="@style/Theme.ASTERDOC" />

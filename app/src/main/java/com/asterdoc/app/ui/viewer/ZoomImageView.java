@@ -59,6 +59,33 @@ public class ZoomImageView extends AppCompatImageView implements
         init(context);
     }
 
+    public interface OnZoomScaleChangeListener {
+        void onZoomScaleChanged(float newScale);
+    }
+
+    private OnZoomScaleChangeListener zoomScaleChangeListener;
+
+    public void setOnZoomScaleChangeListener(OnZoomScaleChangeListener listener) {
+        this.zoomScaleChangeListener = listener;
+    }
+
+    public void setSaveScale(float scale) {
+        if (this.saveScale != scale) {
+            this.saveScale = Math.max(minScale, Math.min(maxScale, scale));
+            requestLayout();
+            if (zoomScaleChangeListener != null) {
+                zoomScaleChangeListener.onZoomScaleChanged(this.saveScale);
+            }
+        }
+    }
+
+    public void setSaveScaleQuiet(float scale) {
+        if (this.saveScale != scale) {
+            this.saveScale = Math.max(minScale, Math.min(maxScale, scale));
+            requestLayout();
+        }
+    }
+
     public void setOnZoomImageClickListener(OnZoomImageClickListener listener) {
         this.tapListener = listener;
     }
@@ -85,7 +112,6 @@ public class ZoomImageView extends AppCompatImageView implements
     }
 
     private void updateSymmetricExpansion() {
-        // Upper part works as down part: keep top edge fixed (translationY = 0) and expand strictly downwards
         setTranslationY(0f);
     }
 
@@ -116,27 +142,36 @@ public class ZoomImageView extends AppCompatImageView implements
         animator.setDuration(220);
         animator.addUpdateListener(animation -> {
             float fraction = (float) animation.getAnimatedValue();
-            float currentScale = startScale + (targetScale - startScale) * fraction;
-            saveScale = currentScale;
+            float currentScaleFactor = startScale + (targetScale - startScale) * fraction;
+            saveScale = currentScaleFactor;
 
             requestLayout();
-            updateSymmetricExpansion();
-
-            float newTransX = FocalPointMath.calculateNewTranslation(focusX, startTransX, startScale, currentScale);
-            float newTransY = FocalPointMath.calculateNewTranslation(focusY, startTransY, startScale, currentScale);
-
-            newTransX = FocalPointMath.clampTranslation(newTransX, viewWidth, viewWidth * currentScale);
-            newTransY = FocalPointMath.clampTranslation(newTransY, viewHeight, viewHeight * currentScale);
 
             float baseScale = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
                     ? (float) viewWidth / getDrawable().getIntrinsicWidth() : 1f;
+            float currentScale = baseScale * saveScale;
+
+            float pageH = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
+                    ? viewWidth * ((float) getDrawable().getIntrinsicHeight() / getDrawable().getIntrinsicWidth()) : viewHeight;
+            float contentWidth = viewWidth * saveScale;
+            float contentHeight = pageH * saveScale;
+
+            float newTransX = FocalPointMath.calculateNewTranslation(focusX, startTransX, startScale, saveScale);
+            float newTransY = FocalPointMath.calculateNewTranslation(focusY, startTransY, startScale, saveScale);
+
+            newTransX = FocalPointMath.clampTranslation(newTransX, viewWidth, contentWidth);
+            newTransY = FocalPointMath.clampTranslation(newTransY, pageH, contentHeight);
 
             matrix.reset();
-            matrix.setScale(baseScale * currentScale, baseScale * currentScale);
+            matrix.setScale(currentScale, currentScale);
             matrix.postTranslate(newTransX, newTransY);
 
             updateMatrix();
             invalidate();
+
+            if (zoomScaleChangeListener != null) {
+                zoomScaleChangeListener.onZoomScaleChanged(saveScale);
+            }
         });
 
         animator.start();
@@ -171,9 +206,6 @@ public class ZoomImageView extends AppCompatImageView implements
                 lastPoint.set(currentPoint);
                 startPoint.set(lastPoint);
                 mode = DRAG;
-                if (saveScale > 1.0f && getParent() != null) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                }
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -181,31 +213,40 @@ public class ZoomImageView extends AppCompatImageView implements
                     float deltaX = currentPoint.x - lastPoint.x;
                     float deltaY = currentPoint.y - lastPoint.y;
 
-                    float currentTransX = getMatrixTranslationX();
-                    float currentTransY = getMatrixTranslationY();
+                    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+                        if (getParent() != null) {
+                            getParent().requestDisallowInterceptTouchEvent(true);
+                        }
 
-                    float newTransX = FocalPointMath.clampTranslation(currentTransX + deltaX, viewWidth, viewWidth * saveScale);
-                    float newTransY = FocalPointMath.clampTranslation(currentTransY + deltaY, viewHeight, viewHeight * saveScale);
+                        float baseScale = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
+                                ? (float) viewWidth / getDrawable().getIntrinsicWidth() : 1f;
+                        float currentScale = baseScale * saveScale;
 
-                    matrix.postTranslate(newTransX - currentTransX, newTransY - currentTransY);
-                    lastPoint.set(currentPoint.x, currentPoint.y);
-                    if (getParent() != null) {
-                        getParent().requestDisallowInterceptTouchEvent(true);
+                        float currentTransX = getMatrixTranslationX();
+                        float contentWidth = viewWidth * saveScale;
+                        float newTransX = FocalPointMath.clampTranslation(currentTransX + deltaX, viewWidth, contentWidth);
+
+                        matrix.reset();
+                        matrix.setScale(currentScale, currentScale);
+                        matrix.postTranslate(newTransX, 0f);
+                        updateMatrix();
+                        invalidate();
+                    } else if (getParent() != null) {
+                        getParent().requestDisallowInterceptTouchEvent(false);
                     }
+                    lastPoint.set(currentPoint.x, currentPoint.y);
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
                 mode = NONE;
-                if (saveScale <= 1.0f && getParent() != null) {
+                if (getParent() != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
                 }
                 break;
         }
 
-        updateMatrix();
-        invalidate();
         return true;
     }
 
@@ -214,6 +255,7 @@ public class ZoomImageView extends AppCompatImageView implements
         if (getParent() != null) {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
+
         float scaleFactor = detector.getScaleFactor();
         float oldScale = saveScale;
         float newScale = oldScale * scaleFactor;
@@ -233,22 +275,30 @@ public class ZoomImageView extends AppCompatImageView implements
 
             saveScale = newScale;
             requestLayout();
-            updateSymmetricExpansion();
+
+            float baseScale = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
+                    ? (float) viewWidth / getDrawable().getIntrinsicWidth() : 1f;
+            float currentScale = baseScale * saveScale;
+
+            float contentWidth = viewWidth * saveScale;
+            float pageH = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
+                    ? viewWidth * ((float) getDrawable().getIntrinsicHeight() / getDrawable().getIntrinsicWidth()) : viewHeight;
+            float contentHeight = pageH * saveScale;
 
             float newTransX = FocalPointMath.calculateNewTranslation(focusX, currentTransX, oldScale, newScale);
             float newTransY = FocalPointMath.calculateNewTranslation(focusY, currentTransY, oldScale, newScale);
 
-            newTransX = FocalPointMath.clampTranslation(newTransX, viewWidth, viewWidth * newScale);
-            newTransY = FocalPointMath.clampTranslation(newTransY, viewHeight, viewHeight * newScale);
-
-            float baseScale = (getDrawable() != null && getDrawable().getIntrinsicWidth() > 0)
-                    ? (float) viewWidth / getDrawable().getIntrinsicWidth() : 1f;
+            newTransX = FocalPointMath.clampTranslation(newTransX, viewWidth, contentWidth);
+            newTransY = FocalPointMath.clampTranslation(newTransY, pageH, contentHeight);
 
             matrix.reset();
-            matrix.setScale(baseScale * saveScale, baseScale * saveScale);
+            matrix.setScale(currentScale, currentScale);
             matrix.postTranslate(newTransX, newTransY);
-
             updateMatrix();
+
+            if (zoomScaleChangeListener != null) {
+                zoomScaleChangeListener.onZoomScaleChanged(saveScale);
+            }
         }
 
         return true;
@@ -276,17 +326,28 @@ public class ZoomImageView extends AppCompatImageView implements
             int w = MeasureSpec.getSize(widthMeasureSpec);
             int pageH = (int) ((float) w * getDrawable().getIntrinsicHeight() / getDrawable().getIntrinsicWidth());
             viewWidth = w;
-            viewHeight = pageH;
+            int zoomedH = (int) (pageH * saveScale);
+            viewHeight = zoomedH;
 
-            int h = (saveScale > 1.0f) ? (int) (pageH * saveScale) : pageH;
-            setMeasuredDimension(w, h);
+            setMeasuredDimension(w, zoomedH);
             updateSymmetricExpansion();
 
-            if (saveScale == 1.0f) {
-                float scale = (float) w / getDrawable().getIntrinsicWidth();
-                matrix.setScale(scale, scale);
-                updateMatrix();
-            }
+            float baseScale = (float) w / getDrawable().getIntrinsicWidth();
+            float currentScale = baseScale * saveScale;
+
+            float contentWidth = w * saveScale;
+            float contentHeight = pageH * saveScale;
+
+            float currentTransX = getMatrixTranslationX();
+            float currentTransY = getMatrixTranslationY();
+
+            currentTransX = FocalPointMath.clampTranslation(currentTransX, w, contentWidth);
+            currentTransY = FocalPointMath.clampTranslation(currentTransY, pageH, contentHeight);
+
+            matrix.reset();
+            matrix.setScale(currentScale, currentScale);
+            matrix.postTranslate(currentTransX, currentTransY);
+            updateMatrix();
             return;
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -312,3 +373,4 @@ public class ZoomImageView extends AppCompatImageView implements
         return false;
     }
 }
+

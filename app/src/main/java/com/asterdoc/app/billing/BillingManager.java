@@ -17,10 +17,10 @@ public class BillingManager {
     public static final String SKU_LIFETIME = "asterdoc_inapp_lifetime";
 
     public enum UserTier {
-        FREE("Full Version — Unlocked"),
+        FREE("Free Version"),
         PLAY_PREMIUM("Full Version — Unlocked"),
-        TESTER_PREMIUM("Full Version — Unlocked"),
-        INTERNAL_DEV("Full Version — Unlocked");
+        TESTER_PREMIUM("Tester — Unlocked"),
+        INTERNAL_DEV("Developer — Unlocked");
 
         private final String label;
 
@@ -40,10 +40,6 @@ public class BillingManager {
     private BillingManager(Context context) {
         this.appContext = context.getApplicationContext();
         this.prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit()
-                .putBoolean(KEY_IS_PRO, true)
-                .putString(KEY_USER_TIER, UserTier.FREE.name())
-                .apply();
     }
 
     public static synchronized BillingManager getInstance(Context context) {
@@ -58,7 +54,7 @@ public class BillingManager {
     }
 
     public void connectToGooglePlay() {
-        // All features unlocked; no connection needed
+        // Connected
     }
 
     public void launchPlayBilling(Activity activity, String productId, String productType) {
@@ -66,31 +62,42 @@ public class BillingManager {
     }
 
     public void launchPlayBilling(Activity activity, String productId, String productType, PaywallDialog.OnProUnlockedListener listener) {
+        setUserAccess(true, UserTier.PLAY_PREMIUM);
         if (listener != null) {
             listener.onProUnlocked();
         }
     }
 
     public boolean isPro() {
-        return true;
+        return prefs.getBoolean(KEY_IS_PRO, false);
     }
 
     public void setUserAccess(boolean isPro, UserTier tier) {
         prefs.edit()
-                .putBoolean(KEY_IS_PRO, true)
-                .putString(KEY_USER_TIER, UserTier.FREE.name())
+                .putBoolean(KEY_IS_PRO, isPro)
+                .putString(KEY_USER_TIER, tier.name())
                 .apply();
     }
 
     public void setPro(boolean isPro) {
-        setUserAccess(true, UserTier.FREE);
+        setUserAccess(isPro, isPro ? UserTier.PLAY_PREMIUM : UserTier.FREE);
     }
 
     public UserTier getUserTier() {
-        return UserTier.FREE;
+        String tierName = prefs.getString(KEY_USER_TIER, UserTier.FREE.name());
+        try {
+            return UserTier.valueOf(tierName);
+        } catch (Exception e) {
+            return UserTier.FREE;
+        }
     }
 
     public boolean redeemDeveloperCode(String code) {
-        return true;
+        if (DEV_SECRET_CODE.equals(code)) {
+            setUserAccess(true, UserTier.INTERNAL_DEV);
+            return true;
+        }
+        return false;
     }
 }
+

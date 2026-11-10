@@ -18,3 +18,4 @@ public class ToolItem {
     public int getIconResId() { return iconResId; }
     public String getToolType() { return toolType; }
 }
+

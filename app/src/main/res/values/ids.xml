@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="llPrivacyOptionsSetting" />
+    <item type="id" name="dividerPrivacyOptions" />
+    <item type="id" name="tvChosenSigName" />
+    <item type="id" name="layoutUploadPhase" />
+    <item type="id" name="layoutFullScreenEditor" />
+    <item type="id" name="layoutPdfPreviewFrame" />
+    <item type="id" name="ivPdfPagePreview" />
+    <item type="id" name="ivInteractiveSignatureOverlay" />
+    <item type="id" name="tvPageNumSign" />
+    <item type="id" name="seekBarSigRotate" />
+    <item type="id" name="btnContinueToEditor" />
+    <item type="id" name="btnPrevPageSign" />
+    <item type="id" name="btnNextPageSign" />
+    <item type="id" name="btnRotateCCW" />
+    <item type="id" name="btnRotateCW" />
+    <item type="id" name="btnRemoveSignature" />
+    <item type="id" name="btnTopBack" />
+    <item type="id" name="btnTopRotate" />
+    <item type="id" name="btnTopInfo" />
+    <item type="id" name="btnTopShare" />
+    <item type="id" name="btnTopMenu" />
+    <item type="id" name="layoutVerticalScrollPill" />
+    <item type="id" name="layoutPageCounterPill" />
+    <item type="id" name="tvPageBadgeCounter" />
+    <item type="id" name="fabEditDocument" />
+    <item type="id" name="btnInvertColor" />
+    <item type="id" name="tvZoomToast" />
+</resources>

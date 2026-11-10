@@ -188,7 +188,7 @@ public class PdfArrangerActivity extends AppCompatActivity implements PdfArrange
 
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                File outDir = PdfProcessor.getAsterDocsDirectory();
+                File outDir = PdfProcessor.getAsterDocsDirectory(this);
                 File outFile = new File(outDir, "Arranged_Document_" + System.currentTimeMillis() + ".pdf");
 
                 PdfDocument document = new PdfDocument();
@@ -267,3 +267,4 @@ public class PdfArrangerActivity extends AppCompatActivity implements PdfArrange
         overridePendingTransition(R.anim.fade_in, R.anim.slide_out_bottom);
     }
 }
+

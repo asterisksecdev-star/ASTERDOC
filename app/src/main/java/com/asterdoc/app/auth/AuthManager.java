@@ -32,11 +32,11 @@ public class AuthManager {
     }
 
     public boolean isLoggedIn() {
-        return prefs.getBoolean(KEY_IS_LOGGED_IN, false);
+        return true;
     }
 
     public boolean isSessionLocked() {
-        return !isLoggedIn();
+        return false;
     }
 
     public void lockSession() {

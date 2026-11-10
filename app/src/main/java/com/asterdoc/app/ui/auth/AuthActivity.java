@@ -295,7 +295,7 @@ public class AuthActivity extends AppCompatActivity {
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.reset_pwd_title)
-                .setIcon(R.mipmap.ic_launcher)
+                .setIcon(R.drawable.asterine_logo_image)
                 .setView(dialogView)
                 .setPositiveButton(R.string.reset_pwd_title, null)
                 .setNegativeButton(R.string.cancel, null)
@@ -473,3 +473,4 @@ public class AuthActivity extends AppCompatActivity {
         finish();
     }
 }
+

@@ -1,9 +1,12 @@
 package com.asterdoc.app.ui.files;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +14,12 @@ import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.text.Editable;
+import android.text.TextWatcher;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
@@ -31,6 +39,8 @@ import com.asterdoc.app.util.BrandedToast;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -42,10 +52,112 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
     private DocumentAdapter adapter;
     private RecyclerView rvFilesList;
     private TextView tvEmptyFiles;
-    private View llTrashActions;
     private View llBulkActions;
     private TextView tvSelectedCount;
     private int selectedTabPosition = 0;
+    private View layoutFilesSearchBar;
+    private EditText etFilesSearchQuery;
+    private int currentSortType = 0; // 0 = Date desc, 1 = Name asc, 2 = Size desc
+
+    private final ActivityResultLauncher<Intent> phoneDocPickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        importAndOpenDocument(uri);
+                    }
+                }
+            }
+    );
+
+    private void launchPhoneDocPicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        String[] mimetypes = {
+                "application/pdf",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint",
+                "text/plain"
+        };
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
+        phoneDocPickerLauncher.launch(Intent.createChooser(intent, getString(R.string.open_phone_doc)));
+    }
+
+    private String getFileNameFromUri(Uri uri) {
+        String result = null;
+        if (uri.getScheme() != null && uri.getScheme().equals("content")) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (idx != -1) {
+                        result = cursor.getString(idx);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result != null ? result.lastIndexOf('/') : -1;
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result != null ? result : "Document_" + System.currentTimeMillis() + ".pdf";
+    }
+
+    private void importAndOpenDocument(Uri uri) {
+        try {
+            InputStream is = requireContext().getContentResolver().openInputStream(uri);
+            String fileName = getFileNameFromUri(uri);
+            File dir = PdfProcessor.getAsterDocsDirectory(requireContext());
+            File importedFile = new File(dir, fileName);
+
+            FileOutputStream fos = new FileOutputStream(importedFile);
+            byte[] buf = new byte[8192];
+            int len;
+            while (is != null && (len = is.read(buf)) > 0) {
+                fos.write(buf, 0, len);
+            }
+            if (is != null) is.close();
+            fos.close();
+
+            String type = "PDF";
+            String lower = fileName.toLowerCase();
+            if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+                type = "WORD";
+            } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
+                type = "EXCEL";
+            } else if (lower.endsWith(".pptx") || lower.endsWith(".ppt")) {
+                type = "PPT";
+            } else if (lower.endsWith(".txt")) {
+                type = "TXT";
+            }
+
+            DocumentItem item = new DocumentItem(
+                    String.valueOf(System.currentTimeMillis()),
+                    fileName,
+                    importedFile.getAbsolutePath(),
+                    type,
+                    importedFile.length(),
+                    System.currentTimeMillis(),
+                    "Recent"
+            );
+            if (repository != null) {
+                repository.addDocument(item);
+                refreshList();
+            }
+
+            openDocument(item);
+
+        } catch (Exception e) {
+            BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+        }
+    }
 
     @Nullable
     @Override
@@ -56,49 +168,65 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
 
         rvFilesList = view.findViewById(R.id.rvFilesList);
         tvEmptyFiles = view.findViewById(R.id.tvEmptyFiles);
-        llTrashActions = view.findViewById(R.id.llTrashActions);
         llBulkActions = view.findViewById(R.id.llBulkActions);
         tvSelectedCount = view.findViewById(R.id.tvSelectedCount);
-        View btnEmptyTrash = view.findViewById(R.id.btnEmptyTrash);
 
+        View fabOpen = view.findViewById(R.id.fabOpenPhoneDocFiles);
+        if (fabOpen != null) {
+            fabOpen.setOnClickListener(v -> launchPhoneDocPicker());
+        }
         View btnBulkSelectAll = view.findViewById(R.id.btnBulkSelectAll);
         View btnBulkRestore = view.findViewById(R.id.btnBulkRestore);
         View btnBulkShare = view.findViewById(R.id.btnBulkShare);
-        View btnBulkCompress = view.findViewById(R.id.btnBulkCompress);
         View btnBulkDelete = view.findViewById(R.id.btnBulkDelete);
         View btnBulkClose = view.findViewById(R.id.btnBulkClose);
 
         if (btnBulkSelectAll != null) btnBulkSelectAll.setOnClickListener(v -> adapter.toggleSelectAll());
         if (btnBulkRestore != null) btnBulkRestore.setOnClickListener(v -> bulkRestoreSelected());
         if (btnBulkShare != null) btnBulkShare.setOnClickListener(v -> bulkShareSelected());
-        if (btnBulkCompress != null) btnBulkCompress.setOnClickListener(v -> bulkCompressSelected());
         if (btnBulkDelete != null) btnBulkDelete.setOnClickListener(v -> bulkDeleteSelected());
         if (btnBulkClose != null) btnBulkClose.setOnClickListener(v -> adapter.clearSelection());
 
-        if (btnEmptyTrash != null) {
-            btnEmptyTrash.setOnClickListener(v -> {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.empty_trash_title)
-                        .setMessage(R.string.empty_trash_msg)
-                        .setIcon(R.mipmap.ic_launcher)
-                        .setPositiveButton(R.string.empty_trash, (dialog, which) -> {
-                            repository.emptyTrash();
-                            refreshList();
-                            BrandedToast.show(requireContext(), getString(R.string.msg_trash_emptied));
-                        })
-                        .setNegativeButton(R.string.cancel, null)
-                        .show();
+        View btnFilesSelectAll = view.findViewById(R.id.btnFilesSelectAll);
+        View btnFilesSort = view.findViewById(R.id.btnFilesSort);
+        View btnFilesSearch = view.findViewById(R.id.btnFilesSearch);
+        layoutFilesSearchBar = view.findViewById(R.id.layoutFilesSearchBar);
+        etFilesSearchQuery = view.findViewById(R.id.etFilesSearchQuery);
+        View btnFilesCloseSearch = view.findViewById(R.id.btnFilesCloseSearch);
+
+        if (btnFilesSelectAll != null) btnFilesSelectAll.setOnClickListener(v -> {
+            if (adapter != null) adapter.toggleSelectAll();
+        });
+        if (btnFilesSort != null) btnFilesSort.setOnClickListener(v -> showSortMenu(v));
+        if (btnFilesSearch != null) btnFilesSearch.setOnClickListener(v -> toggleSearchBar());
+        if (btnFilesCloseSearch != null) btnFilesCloseSearch.setOnClickListener(v -> closeSearchBar());
+
+        if (etFilesSearchQuery != null) {
+            etFilesSearchQuery.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    refreshList();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
             });
         }
 
         TabLayout tabLayout = view.findViewById(R.id.tabLayoutFiles);
 
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.all)));
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.created)));
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.scanned)));
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.favorites)));
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.trash)));
+        tabLayout.addTab(tabLayout.newTab().setText("PDF"));
+        tabLayout.addTab(tabLayout.newTab().setText("Word"));
+        tabLayout.addTab(tabLayout.newTab().setText("Excel"));
+        tabLayout.addTab(tabLayout.newTab().setText("PPT"));
+        tabLayout.addTab(tabLayout.newTab().setText("TXT"));
 
+        rvFilesList.setHasFixedSize(true);
+        rvFilesList.setItemViewCacheSize(30);
         rvFilesList.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvFilesList.setLayoutAnimation(AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_animation_fall_down));
         adapter = new DocumentAdapter(getFilteredList(), this);
@@ -124,46 +252,123 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
     }
 
     private List<DocumentItem> getFilteredList() {
+        List<DocumentItem> allDocs = repository.getAllDocuments();
+        List<DocumentItem> filtered = new ArrayList<>();
         switch (selectedTabPosition) {
             case 1:
-                return repository.getCreatedDocuments();
+                for (DocumentItem item : allDocs) {
+                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
+                    if ("PDF".equalsIgnoreCase(item.getType()) || name.endsWith(".pdf")) filtered.add(item);
+                }
+                return filtered;
             case 2:
-                return repository.getScannedDocuments();
+                for (DocumentItem item : allDocs) {
+                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
+                    if ("WORD".equalsIgnoreCase(item.getType()) || name.endsWith(".docx") || name.endsWith(".doc")) filtered.add(item);
+                }
+                return filtered;
             case 3:
-                return repository.getFavoriteDocuments();
+                for (DocumentItem item : allDocs) {
+                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
+                    if ("EXCEL".equalsIgnoreCase(item.getType()) || name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) filtered.add(item);
+                }
+                return filtered;
             case 4:
-                return repository.getTrashDocuments();
+                for (DocumentItem item : allDocs) {
+                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
+                    if ("PPT".equalsIgnoreCase(item.getType()) || name.endsWith(".pptx") || name.endsWith(".ppt")) filtered.add(item);
+                }
+                return filtered;
+            case 5:
+                for (DocumentItem item : allDocs) {
+                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
+                    if ("TXT".equalsIgnoreCase(item.getType()) || name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md")) filtered.add(item);
+                }
+                return filtered;
             case 0:
             default:
-                return repository.getAllDocuments();
+                return allDocs;
         }
     }
 
     private void refreshList() {
-        if (llTrashActions != null) {
-            llTrashActions.setVisibility(selectedTabPosition == 4 ? View.VISIBLE : View.GONE);
-        }
         if (adapter != null) {
             adapter.clearSelection();
         }
         List<DocumentItem> list = getFilteredList();
+        applySorting(list);
+
+        String query = etFilesSearchQuery != null ? etFilesSearchQuery.getText().toString().trim().toLowerCase() : "";
+        if (!query.isEmpty()) {
+            List<DocumentItem> searched = new ArrayList<>();
+            for (DocumentItem item : list) {
+                if (item.getName().toLowerCase().contains(query)) {
+                    searched.add(item);
+                }
+            }
+            list = searched;
+        }
+
         updateUI(list);
+    }
+
+
+
+    private void toggleSearchBar() {
+        if (layoutFilesSearchBar != null) {
+            if (layoutFilesSearchBar.getVisibility() == View.VISIBLE) {
+                closeSearchBar();
+            } else {
+                layoutFilesSearchBar.setVisibility(View.VISIBLE);
+                if (etFilesSearchQuery != null) etFilesSearchQuery.requestFocus();
+            }
+        }
+    }
+
+    private void closeSearchBar() {
+        if (layoutFilesSearchBar != null) {
+            layoutFilesSearchBar.setVisibility(View.GONE);
+            if (etFilesSearchQuery != null) etFilesSearchQuery.setText("");
+            refreshList();
+        }
+    }
+
+    private void showSortMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(requireContext(), anchor);
+        popup.getMenu().add(0, 1, 0, getString(R.string.sort_by_date));
+        popup.getMenu().add(0, 2, 1, getString(R.string.sort_by_name));
+        popup.getMenu().add(0, 3, 2, getString(R.string.sort_by_size));
+
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == 1) currentSortType = 0;
+            else if (id == 2) currentSortType = 1;
+            else if (id == 3) currentSortType = 2;
+            refreshList();
+            return true;
+        });
+        popup.show();
+    }
+
+    private void applySorting(List<DocumentItem> list) {
+        if (currentSortType == 1) {
+            java.util.Collections.sort(list, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+        } else if (currentSortType == 2) {
+            java.util.Collections.sort(list, (a, b) -> Long.compare(b.getSize(), a.getSize()));
+        } else {
+            java.util.Collections.sort(list, (a, b) -> Long.compare(b.getDate(), a.getDate()));
+        }
     }
 
     private void updateUI(List<DocumentItem> list) {
         adapter.updateData(list);
         if (list.isEmpty()) {
-            switch (selectedTabPosition) {
-                case 3:
-                    tvEmptyFiles.setText(getString(R.string.no_favorite_files_found));
-                    break;
-                case 4:
-                    tvEmptyFiles.setText(getString(R.string.no_trash_files_found));
-                    break;
-                default:
-                    tvEmptyFiles.setText(getString(R.string.no_files_found_in_section));
-                    break;
-            }
+            tvEmptyFiles.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_empty_man_folder, 0, 0);
+            tvEmptyFiles.setCompoundDrawablePadding(32);
+            tvEmptyFiles.setText(R.string.no_files_yet);
+            tvEmptyFiles.setTextColor(android.graphics.Color.parseColor("#FFFFFF"));
+            tvEmptyFiles.setTextSize(18);
+            tvEmptyFiles.setTypeface(null, android.graphics.Typeface.BOLD);
             tvEmptyFiles.setVisibility(View.VISIBLE);
             rvFilesList.setVisibility(View.GONE);
         } else {
@@ -192,18 +397,15 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                     tvSelectedCount.setText(getString(R.string.selection_count, selectedCount));
                 }
                 View btnShare = getView() != null ? getView().findViewById(R.id.btnBulkShare) : null;
-                View btnCompress = getView() != null ? getView().findViewById(R.id.btnBulkCompress) : null;
                 View btnDelete = getView() != null ? getView().findViewById(R.id.btnBulkDelete) : null;
                 View btnRestore = getView() != null ? getView().findViewById(R.id.btnBulkRestore) : null;
 
                 if (selectedTabPosition == 4) {
                     if (btnShare != null) btnShare.setVisibility(View.GONE);
-                    if (btnCompress != null) btnCompress.setVisibility(View.GONE);
                     if (btnDelete != null) btnDelete.setVisibility(View.GONE);
                     if (btnRestore != null) btnRestore.setVisibility(View.VISIBLE);
                 } else {
                     if (btnShare != null) btnShare.setVisibility(View.VISIBLE);
-                    if (btnCompress != null) btnCompress.setVisibility(View.VISIBLE);
                     if (btnDelete != null) btnDelete.setVisibility(View.VISIBLE);
                     if (btnRestore != null) btnRestore.setVisibility(View.GONE);
                 }
@@ -254,9 +456,7 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 renameDocumentDialog(item);
                 return true;
             } else if (itemId == 6) {
-                repository.moveToTrash(item.getId());
-                refreshList();
-                BrandedToast.show(requireContext(), getString(R.string.msg_moved_trash));
+                confirmMoveToTrash(item);
                 return true;
             }
             return false;
@@ -267,10 +467,20 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
     private void openDocument(DocumentItem item) {
         File file = new File(item.getPath());
         if (!file.exists() || file.length() == 0) {
-            file = SamplePdfGenerator.createSamplePdf(requireContext(), item.getName(), item.getName());
-            item.setPath(file.getAbsolutePath());
-            item.setSize(file.length());
-            repository.updateDocument(item);
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.file_not_found_title)
+                    .setMessage(getString(R.string.file_not_found_msg, item.getName()))
+                    .setIcon(R.drawable.asterine_logo_image)
+                    .setPositiveButton(R.string.btn_delete_from_app, (dialog, which) -> {
+                        if (repository != null) {
+                            repository.deletePermanently(item.getId());
+                            refreshList();
+                        }
+                        BrandedToast.show(requireContext(), getString(R.string.msg_document_deleted));
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+            return;
         }
 
         String name = file.getName().toLowerCase();
@@ -400,7 +610,7 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         new AlertDialog.Builder(requireContext())
                 .setTitle(title)
                 .setMessage(message)
-                .setIcon(R.mipmap.ic_launcher)
+                .setIcon(R.drawable.asterine_logo_image)
                 .setPositiveButton(positiveBtn, (dialog, which) -> {
                     List<DocumentItem> all = adapter.getItems();
                     for (DocumentItem item : all) {
@@ -424,73 +634,50 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 .show();
     }
 
-    private void bulkCompressSelected() {
-        Set<String> selectedKeys = adapter.getSelectedIds();
-        if (selectedKeys.isEmpty()) return;
 
-        List<DocumentItem> all = adapter.getItems();
-        List<File> toCompress = new ArrayList<>();
-        for (DocumentItem item : all) {
-            String key = getKey(item);
-            if (selectedKeys.contains(key)) {
-                File file = new File(item.getPath());
-                if (file.exists()) {
-                    toCompress.add(file);
-                }
-            }
-        }
-
-        if (toCompress.isEmpty()) {
-            BrandedToast.show(requireContext(), "No valid files to compress");
-            return;
-        }
-
-        BrandedToast.show(requireContext(), getString(R.string.bulk_compress_toast, toCompress.size()));
-        Executors.newSingleThreadExecutor().execute(() -> {
-            int successCount = 0;
-            for (File file : toCompress) {
-                try {
-                    File comp = PdfProcessor.compressPdf(requireContext(), file, file.getName());
-                    if (comp != null && comp.exists() && comp.length() < file.length()) {
-                        successCount++;
-                        DocumentItem newItem = new DocumentItem(
-                                String.valueOf(System.currentTimeMillis()),
-                                comp.getName(),
-                                comp.getAbsolutePath(),
-                                "PDF",
-                                comp.length(),
-                                System.currentTimeMillis(),
-                                "Created"
-                        );
-                        repository.addDocument(newItem);
-                    }
-                } catch (Exception ignored) {}
-            }
-
-            final int count = successCount;
-            if (isAdded()) {
-                requireActivity().runOnUiThread(() -> {
-                    adapter.clearSelection();
-                    refreshList();
-                    BrandedToast.show(requireContext(), getString(R.string.bulk_compress_success, count, toCompress.size()));
-                });
-            }
-        });
-    }
 
     private void renameDocumentDialog(DocumentItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle(R.string.rename_document);
+        builder.setIcon(R.drawable.asterine_logo_image);
+
         final EditText input = new EditText(requireContext());
-        input.setText(item.getName());
+        input.setPadding(48, 32, 48, 32);
+
+        String fullName = item.getName() != null ? item.getName() : "Document.pdf";
+        String baseName = fullName;
+        String extension = "";
+        int dotIndex = fullName.lastIndexOf('.');
+        if (dotIndex != -1) {
+            baseName = fullName.substring(0, dotIndex);
+            extension = fullName.substring(dotIndex);
+        }
+
+        input.setText(baseName);
+        input.setSelection(baseName.length());
         builder.setView(input);
 
+        final String finalExtension = extension;
         builder.setPositiveButton(R.string.rename, (dialog, which) -> {
-            String newName = input.getText().toString().trim();
-            if (!newName.isEmpty()) {
+            String newBaseName = input.getText().toString().trim();
+            if (!newBaseName.isEmpty()) {
+                String newName = newBaseName + finalExtension;
                 item.setName(newName);
-                repository.updateDocument(item);
-                refreshList();
+
+                try {
+                    File oldFile = new File(item.getPath());
+                    if (oldFile.exists()) {
+                        File newFile = new File(oldFile.getParentFile(), newName);
+                        if (oldFile.renameTo(newFile)) {
+                            item.setPath(newFile.getAbsolutePath());
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                if (repository != null) {
+                    repository.updateDocument(item);
+                    refreshList();
+                }
                 BrandedToast.show(requireContext(), getString(R.string.msg_doc_renamed));
             }
         });
@@ -498,10 +685,25 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         builder.show();
     }
 
+    private void confirmMoveToTrash(DocumentItem item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.move_to_trash_title)
+                .setMessage(R.string.move_to_trash_msg)
+                .setIcon(R.drawable.asterine_logo_image)
+                .setPositiveButton(R.string.move_to_trash_btn, (dialog, which) -> {
+                    repository.moveToTrash(item.getId());
+                    refreshList();
+                    BrandedToast.show(requireContext(), getString(R.string.msg_moved_trash));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void confirmPermanentDelete(DocumentItem item) {
         new AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete_permanently_title)
                 .setMessage(R.string.delete_permanently_msg)
+                .setIcon(R.drawable.asterine_logo_image)
                 .setPositiveButton(R.string.delete, (dialog, which) -> {
                     repository.deletePermanently(item.getId());
                     refreshList();
@@ -511,3 +713,4 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 .show();
     }
 }
+

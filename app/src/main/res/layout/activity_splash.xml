@@ -9,17 +9,19 @@
 
     <ImageView
         android:id="@+id/ivSplashLogo"
-        android:layout_width="110dp"
-        android:layout_height="110dp"
-        android:src="@drawable/ic_asterdocs_logo"
-        android:contentDescription="AsterDocs Logo"
+        android:layout_width="160dp"
+        android:layout_height="80dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/asterine_logo_image"
+        android:contentDescription="Asterine Logo"
         android:layout_marginBottom="24dp"/>
 
     <TextView
         android:id="@+id/tvSplashTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AsterDocs"
+        android:text="Asterine"
         android:textColor="@color/text_primary"
         android:textSize="32sp"
         android:textStyle="bold"
@@ -29,7 +31,7 @@
         android:id="@+id/tvSplashSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AsterDocs • PDF &amp; Document Suite"
+        android:text="Asterine • PDF &amp; Document Suite"
         android:textColor="@color/primary"
         android:textSize="14sp"
         android:textStyle="bold"

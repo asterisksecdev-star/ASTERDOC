@@ -379,8 +379,10 @@ public class SpreadsheetLoader {
                         boolean isString = cellStr.contains("t=\"s\"");
                         int vStart = cellStr.indexOf("<v>");
                         int vEnd = cellStr.indexOf("</v>");
+                        String val = "";
+
                         if (vStart != -1 && vEnd != -1) {
-                            String val = cellStr.substring(vStart + 3, vEnd);
+                            val = cellStr.substring(vStart + 3, vEnd);
                             if (isString) {
                                 try {
                                     int sIndex = Integer.parseInt(val);
@@ -389,10 +391,17 @@ public class SpreadsheetLoader {
                                     }
                                 } catch (Exception ignored) {}
                             }
-                            cells.add(val);
-                        } else {
-                            cells.add("");
+                        } else if (cellStr.contains("<t>") || cellStr.contains("<t ")) {
+                            int tStart = cellStr.indexOf("<t");
+                            if (tStart != -1) {
+                                int close = cellStr.indexOf(">", tStart);
+                                int tEnd = cellStr.indexOf("</t>", close);
+                                if (close != -1 && tEnd != -1) {
+                                    val = cellStr.substring(close + 1, tEnd);
+                                }
+                            }
                         }
+                        cells.add(val);
                         cIdx = cEnd + 4;
                     }
                     if (!cells.isEmpty()) {
@@ -687,3 +696,4 @@ public class SpreadsheetLoader {
         return count;
     }
 }
+

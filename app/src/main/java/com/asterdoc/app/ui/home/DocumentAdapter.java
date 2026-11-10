@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.asterdoc.app.R;
+import com.asterdoc.app.ads.AdManager;
 import com.asterdoc.app.data.DocumentItem;
 import com.google.android.material.card.MaterialCardView;
 
@@ -24,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHolder> {
+public class DocumentAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public interface OnDocumentClickListener {
         void onDocumentClick(DocumentItem item);
@@ -34,11 +36,21 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
         void onSelectionChanged(int selectedCount);
     }
 
+    private static final int TYPE_FILE = 0;
+    private static final int TYPE_NATIVE_AD = 1;
+    private static final int AD_INSERTION_POSITION = 3;
+
     private List<DocumentItem> items;
     private final OnDocumentClickListener listener;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
     private boolean isSelectionMode = false;
+    private boolean isTrashMode = false;
     private final Set<String> selectedKeys = new HashSet<>();
+
+    public void setTrashMode(boolean trashMode) {
+        this.isTrashMode = trashMode;
+        notifyDataSetChanged();
+    }
 
     public DocumentAdapter(List<DocumentItem> items, OnDocumentClickListener listener) {
         this.items = items;
@@ -48,6 +60,13 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
     private String getKey(DocumentItem item) {
         if (item == null) return "";
         return item.getId() != null ? item.getId() : (item.getPath() != null ? item.getPath() : item.getName());
+    }
+
+    private int getItemIndex(int position) {
+        if (items != null && items.size() >= AD_INSERTION_POSITION && position > AD_INSERTION_POSITION) {
+            return position - 1;
+        }
+        return position;
     }
 
     public void updateData(List<DocumentItem> newItems) {
@@ -91,21 +110,7 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
             isSelectionMode = true;
         }
 
-        int position = -1;
-        if (items != null) {
-            for (int i = 0; i < items.size(); i++) {
-                if (getKey(items.get(i)).equals(key)) {
-                    position = i;
-                    break;
-                }
-            }
-        }
-
-        if (wasSelectionMode != isSelectionMode || position == -1) {
-            notifyDataSetChanged();
-        } else {
-            notifyItemChanged(position);
-        }
+        notifyDataSetChanged();
 
         if (listener != null) {
             listener.onSelectionChanged(selectedKeys.size());
@@ -149,18 +154,59 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
         return items;
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        if (!isTrashMode && items != null && items.size() >= AD_INSERTION_POSITION && position == AD_INSERTION_POSITION) {
+            return TYPE_NATIVE_AD;
+        }
+        return TYPE_FILE;
+    }
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_document, parent, false);
-        return new ViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == TYPE_NATIVE_AD) {
+            FrameLayout frameLayout = new FrameLayout(parent.getContext());
+            frameLayout.setLayoutParams(new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            return new AdViewHolder(frameLayout);
+        } else {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_document, parent, false);
+            return new ViewHolder(view);
+        }
+    }
+
+    public static String getRelativeTime(long timeMillis) {
+        long now = System.currentTimeMillis();
+        long diff = now - timeMillis;
+        if (diff < 60 * 1000) return "Just now";
+        long minutes = diff / (60 * 1000);
+        if (minutes < 60) return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+        long hours = minutes / 60;
+        if (hours < 24) return hours + (hours == 1 ? " hour ago" : " hours ago");
+        long days = hours / 24;
+        if (days < 30) return days + (days == 1 ? " day ago" : " days ago");
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+        return sdf.format(new Date(timeMillis));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        DocumentItem item = items.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder rawHolder, int position) {
+        if (getItemViewType(position) == TYPE_NATIVE_AD) {
+            AdViewHolder adHolder = (AdViewHolder) rawHolder;
+            ViewGroup container = (ViewGroup) adHolder.itemView;
+            AdManager.loadNativeAd(container.getContext(), container);
+            return;
+        }
+
+        ViewHolder holder = (ViewHolder) rawHolder;
+        int itemIndex = getItemIndex(position);
+        if (items == null || itemIndex < 0 || itemIndex >= items.size()) return;
+
+        DocumentItem item = items.get(itemIndex);
         holder.tvName.setText(item.getName());
-        String details = item.getType() + " • " + item.getFormattedSize() + " • " + dateFormat.format(new Date(item.getDate()));
+        String details = getRelativeTime(item.getDate()) + "  " + item.getFormattedSize();
         holder.tvDetails.setText(details);
 
         String type = item.getType();
@@ -169,16 +215,16 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
         int badgeColor;
         if (type != null && type.equalsIgnoreCase("WORD") || name.endsWith(".docx") || name.endsWith(".doc")) {
             iconRes = android.R.drawable.ic_menu_edit;
-            badgeColor = Color.parseColor("#1A73E8"); // Blue for Word
+            badgeColor = Color.parseColor("#1A73E8");
         } else if (type != null && (type.equalsIgnoreCase("EXCEL") || name.endsWith(".xlsx") || name.endsWith(".xls"))) {
             iconRes = android.R.drawable.ic_menu_sort_by_size;
-            badgeColor = Color.parseColor("#0D9488"); // Teal for Excel
+            badgeColor = Color.parseColor("#0D9488");
         } else if (type != null && type.equalsIgnoreCase("TXT") || name.endsWith(".txt")) {
             iconRes = android.R.drawable.ic_menu_search;
-            badgeColor = Color.parseColor("#D97706"); // Amber for TXT
+            badgeColor = Color.parseColor("#D97706");
         } else {
             iconRes = android.R.drawable.ic_menu_save;
-            badgeColor = Color.parseColor("#EA4335"); // Red for PDF
+            badgeColor = Color.parseColor("#EA4335");
         }
         holder.ivIcon.setImageResource(iconRes);
         holder.ivIcon.setBackgroundResource(R.drawable.bg_tool_icon_container);
@@ -189,12 +235,13 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
         boolean isSelected = selectedKeys.contains(key);
         if (holder.cardView != null) {
             if (isSelected) {
-                holder.cardView.setCardBackgroundColor(Color.parseColor("#E2F2E9"));
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#1B2A22"));
                 holder.cardView.setStrokeWidth(3);
                 holder.cardView.setStrokeColor(Color.parseColor("#107C41"));
             } else {
-                holder.cardView.setCardBackgroundColor(Color.parseColor("#FFFFFF"));
-                holder.cardView.setStrokeWidth(0);
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#16171B"));
+                holder.cardView.setStrokeWidth(1);
+                holder.cardView.setStrokeColor(Color.parseColor("#2E323D"));
             }
         }
 
@@ -202,16 +249,22 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
             holder.cbSelect.setVisibility(View.VISIBLE);
             holder.cbSelect.setChecked(isSelected);
             holder.btnFavorite.setVisibility(View.GONE);
-            holder.btnMore.setVisibility(View.GONE);
+            holder.btnMore.setVisibility(View.VISIBLE);
         } else {
             holder.cbSelect.setVisibility(View.GONE);
-            holder.btnFavorite.setVisibility(View.VISIBLE);
-            holder.btnMore.setVisibility(View.VISIBLE);
-            if (item.isFavorite()) {
-                holder.btnFavorite.setImageResource(android.R.drawable.btn_star_big_on);
+            if (isTrashMode) {
+                holder.btnFavorite.setVisibility(View.GONE);
             } else {
-                holder.btnFavorite.setImageResource(android.R.drawable.btn_star_big_off);
+                holder.btnFavorite.setVisibility(View.VISIBLE);
+                if (item.isFavorite()) {
+                    holder.btnFavorite.setImageResource(android.R.drawable.btn_star_big_on);
+                    holder.btnFavorite.setImageTintList(ColorStateList.valueOf(Color.parseColor("#FFB300")));
+                } else {
+                    holder.btnFavorite.setImageResource(android.R.drawable.btn_star_big_off);
+                    holder.btnFavorite.setImageTintList(ColorStateList.valueOf(Color.parseColor("#FFFFFF")));
+                }
             }
+            holder.btnMore.setVisibility(View.VISIBLE);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -244,7 +297,17 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
 
     @Override
     public int getItemCount() {
+        if (items == null || items.isEmpty()) return 0;
+        if (!isTrashMode && items.size() >= AD_INSERTION_POSITION) {
+            return items.size() + 1;
+        }
         return items.size();
+    }
+
+    static class AdViewHolder extends RecyclerView.ViewHolder {
+        AdViewHolder(View itemView) {
+            super(itemView);
+        }
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -268,3 +331,4 @@ public class DocumentAdapter extends RecyclerView.Adapter<DocumentAdapter.ViewHo
         }
     }
 }
+

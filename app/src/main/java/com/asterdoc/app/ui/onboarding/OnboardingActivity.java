@@ -100,8 +100,9 @@ public class OnboardingActivity extends AppCompatActivity {
     }
 
     private void startNextActivity() {
-        startActivity(new Intent(this, AuthActivity.class));
+        startActivity(new Intent(this, com.asterdoc.app.MainActivity.class));
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         finish();
     }
 }
+
