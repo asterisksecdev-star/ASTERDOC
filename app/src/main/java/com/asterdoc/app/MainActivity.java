@@ -185,53 +185,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static String getFileNameFromUri(Context context, Uri uri) {
-        String result = null;
-        if (uri.getScheme() != null && uri.getScheme().equals("content")) {
+        if (uri == null) return "Document_" + System.currentTimeMillis() + ".pdf";
+        String name = null;
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
             try (Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
                     int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                     if (nameIndex != -1) {
-                        result = cursor.getString(nameIndex);
+                        name = cursor.getString(nameIndex);
                     }
                 }
             } catch (Exception ignored) {}
         }
-        if (result == null) {
-            result = uri.getPath();
-            int cut = result != null ? result.lastIndexOf('/') : -1;
-            if (cut != -1) {
-                result = result.substring(cut + 1);
+        if (name == null || name.trim().isEmpty()) {
+            String path = uri.getPath();
+            if (path != null) {
+                int cut = path.lastIndexOf('/');
+                if (cut != -1) {
+                    name = path.substring(cut + 1);
+                }
             }
         }
-
-        if (result == null || result.startsWith("open_") || result.startsWith("app_open_") || result.startsWith("document_") || !result.contains(".")) {
+        if (name == null || name.trim().isEmpty() || !name.contains(".")) {
             String mimeType = context.getContentResolver().getType(uri);
             String ext = ".pdf";
-            String prefix = "Document_";
             if (mimeType != null) {
                 if (mimeType.contains("wordprocessingml") || mimeType.contains("msword")) {
                     ext = ".docx";
-                    prefix = "Word_Document_";
                 } else if (mimeType.contains("spreadsheet") || mimeType.contains("excel") || mimeType.contains("csv")) {
                     ext = ".xlsx";
-                    prefix = "Spreadsheet_";
                 } else if (mimeType.contains("text")) {
                     ext = ".txt";
-                    prefix = "Text_Document_";
                 }
             }
-            if (result == null || result.trim().isEmpty()) {
-                result = prefix + System.currentTimeMillis() + ext;
-            } else {
-                int dot = result.lastIndexOf('.');
-                if (dot != -1) {
-                    result = prefix + System.currentTimeMillis() + result.substring(dot);
-                } else {
-                    result = result + ext;
-                }
-            }
+            name = (name != null && !name.trim().isEmpty() ? name : "Document_" + System.currentTimeMillis()) + (name != null && name.contains(".") ? "" : ext);
         }
-        return result;
+        return name;
     }
 
     public static void showDonationDialogIfNeeded(Context context, boolean forceShow) {

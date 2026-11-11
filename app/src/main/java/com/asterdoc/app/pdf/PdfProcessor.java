@@ -1,5 +1,5 @@
 package com.asterdoc.app.pdf;
-import document.OfficeWordRenderer;
+import document.OfficeDocumentRenderer;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -779,9 +779,9 @@ public class PdfProcessor {
                 java.util.Locale.ROOT
         );
 
-        if (!name.endsWith(".doc") && !name.endsWith(".docx")) {
+        if (!name.endsWith(".doc") && !name.endsWith(".docx") && !name.endsWith(".odt")) {
             throw new IllegalArgumentException(
-                    "Only DOC and DOCX files are supported by the Office renderer."
+                    "Only DOC, DOCX and ODT files are supported by the Office renderer."
             );
         }
 
@@ -799,7 +799,7 @@ public class PdfProcessor {
 
         File outputFile = new File(outputDir, pdfName);
 
-        return OfficeWordRenderer.convertToPdf(wordFile, outputFile);
+        return OfficeDocumentRenderer.convertToPdf(context, wordFile, outputFile);
     }
 
     public static File pdfToWord(Context context, File pdfFile, String textContent, String outputName) throws Exception {

@@ -1,5 +1,7 @@
 package com.asterdoc.app.ui.viewer;
 import android.util.Log;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -225,19 +227,35 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
         new Thread(() -> {
             try {
-                File processed = file;
-                String name = file.getName().toLowerCase();
+                File workingFile = file;
+                try {
+                    File cacheCopy = new File(getCacheDir(), "local_view_" + System.currentTimeMillis() + "_" + file.getName());
+                    try (FileInputStream fis = new FileInputStream(file);
+                         FileOutputStream fos = new FileOutputStream(cacheCopy)) {
+                        byte[] buf = new byte[8192];
+                        int len;
+                        while ((len = fis.read(buf)) > 0) {
+                            fos.write(buf, 0, len);
+                        }
+                    }
+                    if (cacheCopy.exists() && cacheCopy.length() > 0) {
+                        workingFile = cacheCopy;
+                    }
+                } catch (Exception ignored) {}
+
+                File processed = workingFile;
+                String name = workingFile.getName().toLowerCase();
                 if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
-                    sourceWordFile = file;
+                    sourceWordFile = workingFile;
                     processed = PdfProcessor.wordToPdf(
                             this,
-                            file,
-                            file.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf"
+                            workingFile,
+                            workingFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf"
                     );
                 } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") || name.endsWith(".ppsx")) {
                     throw new IllegalArgumentException("PowerPoint files are currently not supported by Asterine.");
                 } else if (name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
-                    processed = PdfProcessor.textToPdf(this, file, file.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
+                    processed = PdfProcessor.textToPdf(this, workingFile, workingFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                 }
 
                 File finalProcessed = processed;
@@ -859,7 +877,11 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             InputStream is = getContentResolver().openInputStream(uri);
             if (is == null) return null;
 
-            File tempFile = File.createTempFile("open_doc_", extension, getCacheDir());
+            String safeName = fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
+            File tempFile = new File(getCacheDir(), safeName);
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
             FileOutputStream fos = new FileOutputStream(tempFile);
             byte[] buf = new byte[8192];
             int len;

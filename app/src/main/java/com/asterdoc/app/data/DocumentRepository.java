@@ -2,6 +2,7 @@ package com.asterdoc.app.data;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Environment;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -40,10 +41,71 @@ public class DocumentRepository {
             documents = gson.fromJson(json, type);
         }
 
-        // Start completely empty for first time users - no pre-found sample documents
         if (documents == null) {
             documents = new ArrayList<>();
             saveDocuments();
+        }
+
+        new Thread(() -> {
+            try {
+                scanLocalDeviceDocuments();
+            } catch (Exception ignored) {}
+        }).start();
+    }
+
+    public synchronized void scanLocalDeviceDocuments() {
+        try {
+            File docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+            File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+            List<File> searchDirs = new ArrayList<>();
+            if (docsDir != null && docsDir.exists()) searchDirs.add(docsDir);
+            if (downloadDir != null && downloadDir.exists()) searchDirs.add(downloadDir);
+
+            for (File dir : searchDirs) {
+                scanDirRecursive(dir, 0);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void scanDirRecursive(File dir, int depth) {
+        if (depth > 3 || dir == null || !dir.exists() || !dir.isDirectory()) return;
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                scanDirRecursive(f, depth + 1);
+            } else if (f.isFile() && f.length() > 0) {
+                String name = f.getName().toLowerCase();
+                String type = null;
+                if (name.endsWith(".pdf")) type = "PDF";
+                else if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") || name.endsWith(".dot") || name.endsWith(".docm") || name.endsWith(".dotx") || name.endsWith(".dotm")) type = "WORD";
+                else if (name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) type = "EXCEL";
+                else if (name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md") || name.endsWith(".xml") || name.endsWith(".json")) type = "TXT";
+
+                if (type != null) {
+                    boolean exists = false;
+                    for (DocumentItem item : documents) {
+                        if (item.getPath() != null && item.getPath().equalsIgnoreCase(f.getAbsolutePath())) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        DocumentItem newItem = new DocumentItem(
+                                String.valueOf(System.currentTimeMillis() + Math.random()),
+                                f.getName(),
+                                f.getAbsolutePath(),
+                                type,
+                                f.length(),
+                                f.lastModified(),
+                                "Recent"
+                        );
+                        documents.add(newItem);
+                        saveDocuments();
+                    }
+                }
+            }
         }
     }
 
