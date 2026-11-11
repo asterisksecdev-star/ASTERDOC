@@ -38,6 +38,7 @@ import com.asterdoc.app.util.LocaleHelper;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -68,6 +69,7 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
         setContentView(R.layout.activity_category_file_list);
 
         repository = DocumentRepository.getInstance(this);
+        repository.addListener(this::loadCategoryDocuments);
 
         if (getIntent() != null && getIntent().hasExtra("CATEGORY_TYPE")) {
             categoryType = getIntent().getStringExtra("CATEGORY_TYPE");
@@ -76,6 +78,12 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
         initViews();
         loadCategoryDocuments();
         com.asterdoc.app.ads.AdManager.loadBannerAd(this, findViewById(R.id.adContainerCategory));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadCategoryDocuments();
     }
 
     private void initViews() {
@@ -471,16 +479,18 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
     private void bulkRestoreSelected() {
         Set<String> selectedKeys = documentAdapter.getSelectedIds();
         if (selectedKeys.isEmpty()) return;
+        Set<String> keysToProcess = new HashSet<>(selectedKeys);
         int count = 0;
-        for (DocumentItem item : currentCategoryItems) {
+        List<DocumentItem> copyList = new ArrayList<>(currentCategoryItems);
+        documentAdapter.clearSelection();
+        for (DocumentItem item : copyList) {
             String key = item.getId() != null ? item.getId() : item.getName();
-            if (selectedKeys.contains(key)) {
+            if (keysToProcess.contains(key)) {
                 item.setTrash(false);
                 repository.updateDocument(item);
                 count++;
             }
         }
-        documentAdapter.clearSelection();
         loadCategoryDocuments();
         BrandedToast.show(this, count + " documents restored!");
     }
@@ -488,7 +498,8 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
     private void bulkDeleteSelected() {
         Set<String> selectedKeys = documentAdapter.getSelectedIds();
         if (selectedKeys.isEmpty()) return;
-        int count = selectedKeys.size();
+        Set<String> keysToProcess = new HashSet<>(selectedKeys);
+        int count = keysToProcess.size();
         boolean isTrash = "TRASH".equalsIgnoreCase(categoryType);
         String title = isTrash ? "Delete Permanently" : "Move to Trash";
         String msg = isTrash ? "Delete permanently " + count + " files?" : "Move " + count + " files to trash?";
@@ -497,9 +508,11 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
                 .setTitle(title)
                 .setMessage(msg)
                 .setPositiveButton("Confirm", (dialog, which) -> {
-                    for (DocumentItem item : currentCategoryItems) {
+                    List<DocumentItem> targetItems = new ArrayList<>(currentCategoryItems);
+                    documentAdapter.clearSelection();
+                    for (DocumentItem item : targetItems) {
                         String key = item.getId() != null ? item.getId() : item.getName();
-                        if (selectedKeys.contains(key)) {
+                        if (keysToProcess.contains(key)) {
                             if (isTrash) {
                                 repository.deletePermanently(item.getId());
                             } else {
@@ -507,7 +520,6 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
                             }
                         }
                     }
-                    documentAdapter.clearSelection();
                     loadCategoryDocuments();
                     BrandedToast.show(this, count + " files processed.");
                 })
@@ -679,6 +691,14 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (repository != null) {
+            repository.removeListener(this::loadCategoryDocuments);
+        }
     }
 }
 

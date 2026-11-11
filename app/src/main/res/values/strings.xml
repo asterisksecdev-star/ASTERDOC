@@ -235,7 +235,7 @@
     <string name="draw_mode_active">Draw &amp; Edit Mode Activated. Draw on any page!</string>
     <string name="onboarding_step_format">Step %1$d of 3</string>
 
-    <string name="privacy_policy_message">🔒 Asterine Privacy &amp; Security Policy\n\n1. On-Device Local Processing:\nAll document operations, including PDF conversions, OCR text extraction, compression, merging, and signatures, take place 100% locally on your device. No document files are ever uploaded or transmitted to external servers.\n\n2. User Account Data:\nYour account credentials and preferences are securely encrypted locally on your device.\n\n3. Permissions &amp; Usage:\n• Camera: Used exclusively for document scanning when initiated by you.\n• Storage/Media: Used to read and save document files you select.\n\n4. Billing &amp; Subscriptions:\nSubscriptions are processed securely via official Google Play Billing.\n\n5. Account &amp; Data Deletion:\nYou have full control over your data and may request account deletion at any time.</string>
+    <string name="privacy_policy_message">🔒 Asterine Privacy &amp; Security Policy\n\n1. On-Device Local Processing:\nAll document operations (conversions, merging, scanning, signatures) take place 100% locally on your device. No files are uploaded to external servers.\n\n2. User Account Data:\nYour account credentials and preferences are securely encrypted on your device.\n\n3. Permissions &amp; Usage:\n• Camera: Used for document scanning.\n• Storage: Used to open and save your documents.</string>
     <string name="delete_account_btn">Delete Account &amp; Data</string>
 
     <string name="reset_pwd_hint_code">Verification Code</string>

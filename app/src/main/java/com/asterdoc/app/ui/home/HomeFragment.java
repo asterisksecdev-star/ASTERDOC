@@ -66,6 +66,7 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         repository = DocumentRepository.getInstance(requireContext());
+        repository.addListener(this::updateCategoryCards);
 
         // Open Phone Document Card & FAB Actions
         View cardOpen = view.findViewById(R.id.cardOpenPhoneDocument);
@@ -143,6 +144,14 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
             if (rvConvert != null) rvConvert.scheduleLayoutAnimation();
             if (rvEdit != null) rvEdit.scheduleLayoutAnimation();
             if (rvScan != null) rvScan.scheduleLayoutAnimation();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (repository != null) {
+            repository.removeListener(this::updateCategoryCards);
         }
     }
 

@@ -207,9 +207,36 @@ public class DocumentRepository {
         return list;
     }
 
+    public interface OnRepositoryChangeListener {
+        void onRepositoryChanged();
+    }
+
+    private final List<OnRepositoryChangeListener> listeners = new ArrayList<>();
+
+    public synchronized void addListener(OnRepositoryChangeListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public synchronized void removeListener(OnRepositoryChangeListener listener) {
+        if (listener != null) {
+            listeners.remove(listener);
+        }
+    }
+
+    private synchronized void notifyListeners() {
+        for (OnRepositoryChangeListener listener : new ArrayList<>(listeners)) {
+            try {
+                listener.onRepositoryChanged();
+            } catch (Exception ignored) {}
+        }
+    }
+
     public void addDocument(DocumentItem item) {
         documents.add(0, item);
         saveDocuments();
+        notifyListeners();
     }
 
     public void updateDocument(DocumentItem item) {
@@ -220,6 +247,7 @@ public class DocumentRepository {
             }
         }
         saveDocuments();
+        notifyListeners();
     }
 
     public void moveToTrash(String id) {
@@ -230,6 +258,7 @@ public class DocumentRepository {
             }
         }
         saveDocuments();
+        notifyListeners();
     }
 
     public void deletePermanently(String id) {
@@ -249,6 +278,7 @@ public class DocumentRepository {
             }
         }
         saveDocuments();
+        notifyListeners();
     }
 
     public void emptyTrash() {
@@ -267,12 +297,14 @@ public class DocumentRepository {
             }
         }
         saveDocuments();
+        notifyListeners();
     }
 
     public void clearAllDocuments() {
         if (documents != null) {
             documents.clear();
             saveDocuments();
+            notifyListeners();
         }
     }
 

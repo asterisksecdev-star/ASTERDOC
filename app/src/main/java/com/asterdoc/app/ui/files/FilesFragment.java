@@ -38,6 +38,7 @@ import com.asterdoc.app.ui.viewer.PdfViewerActivity;
 import com.asterdoc.app.util.BrandedToast;
 import com.asterdoc.app.data.AsterineStorageManager;
 import android.util.Log;
+import java.util.HashSet;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
@@ -191,6 +192,7 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         View view = inflater.inflate(R.layout.fragment_files, container, false);
 
         repository = DocumentRepository.getInstance(requireContext());
+        repository.addListener(this::refreshList);
 
         rvFilesList = view.findViewById(R.id.rvFilesList);
         tvEmptyFiles = view.findViewById(R.id.tvEmptyFiles);
@@ -274,6 +276,12 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         refreshList();
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshList();
     }
 
     private List<DocumentItem> getFilteredList() {
@@ -394,6 +402,14 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
             tvEmptyFiles.setVisibility(View.GONE);
             rvFilesList.setVisibility(View.VISIBLE);
             rvFilesList.scheduleLayoutAnimation();
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (repository != null) {
+            repository.removeListener(this::refreshList);
         }
     }
 
@@ -600,17 +616,18 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         Set<String> selectedKeys = adapter.getSelectedIds();
         if (selectedKeys.isEmpty()) return;
 
+        Set<String> keysToProcess = new HashSet<>(selectedKeys);
         int count = 0;
-        List<DocumentItem> all = adapter.getItems();
-        for (DocumentItem item : all) {
+        List<DocumentItem> allCopy = new ArrayList<>(adapter.getItems());
+        adapter.clearSelection();
+        for (DocumentItem item : allCopy) {
             String key = getKey(item);
-            if (selectedKeys.contains(key)) {
+            if (keysToProcess.contains(key)) {
                 item.setTrash(false);
                 repository.updateDocument(item);
                 count++;
             }
         }
-        adapter.clearSelection();
         refreshList();
         BrandedToast.show(requireContext(), getString(R.string.bulk_restore_msg, count));
     }
@@ -619,7 +636,8 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         Set<String> selectedKeys = adapter.getSelectedIds();
         if (selectedKeys.isEmpty()) return;
 
-        int count = selectedKeys.size();
+        Set<String> keysToProcess = new HashSet<>(selectedKeys);
+        int count = keysToProcess.size();
         boolean isTrashTab = (selectedTabPosition == 4);
 
         String title = isTrashTab ? getString(R.string.bulk_delete_perm_title) : getString(R.string.bulk_move_trash_title);
@@ -633,10 +651,11 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 .setMessage(message)
                 .setIcon(R.drawable.asterine_logo_image)
                 .setPositiveButton(positiveBtn, (dialog, which) -> {
-                    List<DocumentItem> all = adapter.getItems();
-                    for (DocumentItem item : all) {
+                    List<DocumentItem> allCopy = new ArrayList<>(adapter.getItems());
+                    adapter.clearSelection();
+                    for (DocumentItem item : allCopy) {
                         String key = getKey(item);
-                        if (selectedKeys.contains(key)) {
+                        if (keysToProcess.contains(key)) {
                             if (isTrashTab || item.isTrash()) {
                                 repository.deletePermanently(item.getId());
                             } else {
@@ -644,7 +663,6 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                             }
                         }
                     }
-                    adapter.clearSelection();
                     refreshList();
                     String toastMsg = isTrashTab ?
                             getString(R.string.bulk_perm_deleted_msg, count) :
