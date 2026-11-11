@@ -697,6 +697,70 @@ public class PdfProcessor {
         WordElement(WordShape s) { this.type = Type.SHAPE; this.shape = s; }
     }
 
+    public static List<String> extractDocBinaryText(File file) {
+        List<String> paragraphs = new ArrayList<>();
+        if (file == null || !file.exists() || file.length() == 0) return paragraphs;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int maxLen = (int) Math.min(file.length(), 25 * 1024 * 1024);
+            byte[] bytes = new byte[maxLen];
+            int read = fis.read(bytes);
+            if (read <= 0) return paragraphs;
+
+            StringBuilder currentRun = new StringBuilder();
+            for (int i = 0; i < read - 1; i += 2) {
+                char c = (char) (((bytes[i + 1] & 0xFF) << 8) | (bytes[i] & 0xFF));
+                if ((c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t' || (c >= 0x00A0 && c <= 0x02F0)) {
+                    currentRun.append(c);
+                } else {
+                    if (currentRun.length() >= 4) {
+                        String str = cleanWordText(currentRun.toString()).trim();
+                        if (str.length() >= 3 && !isControlJunk(str)) {
+                            paragraphs.add(str);
+                        }
+                    }
+                    currentRun.setLength(0);
+                }
+            }
+            if (currentRun.length() >= 4) {
+                String str = cleanWordText(currentRun.toString()).trim();
+                if (str.length() >= 3 && !isControlJunk(str)) {
+                    paragraphs.add(str);
+                }
+            }
+
+            if (paragraphs.isEmpty()) {
+                StringBuilder asciiRun = new StringBuilder();
+                for (int i = 0; i < read; i++) {
+                    char c = (char) (bytes[i] & 0xFF);
+                    if ((c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t') {
+                        asciiRun.append(c);
+                    } else {
+                        if (asciiRun.length() >= 5) {
+                            String str = cleanWordText(asciiRun.toString()).trim();
+                            if (str.length() >= 4 && !isControlJunk(str)) {
+                                paragraphs.add(str);
+                            }
+                        }
+                        asciiRun.setLength(0);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return paragraphs;
+    }
+
+    private static boolean isControlJunk(String str) {
+        if (str.startsWith("Root Entry") || str.startsWith("WordDocument") || str.startsWith("1Table") || str.startsWith("0Table") || str.startsWith("CompObj") || str.startsWith("Data")) {
+            return true;
+        }
+        int nonAscii = 0;
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c < 32 || c > 126) nonAscii++;
+        }
+        return (float) nonAscii / str.length() > 0.35f;
+    }
+
     public static File wordToPdf(Context context, File wordFile, String outputName) throws Exception {
         if (wordFile == null || !wordFile.exists() || wordFile.length() == 0) {
             throw new IllegalArgumentException("Word document does not exist or is empty.");
@@ -754,18 +818,28 @@ public class PdfProcessor {
                     documentXml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
                 } else if (entryName.startsWith("word/media/") && (entryName.endsWith(".png") || entryName.endsWith(".jpeg") || entryName.endsWith(".jpg") || entryName.endsWith(".bmp") || entryName.endsWith(".gif") || entryName.endsWith(".wmf") || entryName.endsWith(".emf"))) {
                     try {
-                        Bitmap bmp = BitmapFactory.decodeStream(zis);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buf = new byte[8192];
+                        int len;
+                        while ((len = zis.read(buf)) > 0) {
+                            baos.write(buf, 0, len);
+                        }
+                        byte[] imgBytes = baos.toByteArray();
+                        Bitmap bmp = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
                         if (bmp != null) {
                             extractedImages.add(bmp);
                         }
                     } catch (Exception ignored) {}
                 } else if (entryName.startsWith("word/charts/") && entryName.endsWith(".xml")) {
                     try {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(zis, StandardCharsets.UTF_8));
-                        StringBuilder sb = new StringBuilder();
-                        String line;
-                        while ((line = br.readLine()) != null) sb.append(line);
-                        ChartData cd = parseChartXml(sb.toString());
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buf = new byte[8192];
+                        int len;
+                        while ((len = zis.read(buf)) > 0) {
+                            baos.write(buf, 0, len);
+                        }
+                        String chartXml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+                        ChartData cd = parseChartXml(chartXml);
                         Bitmap chartBmp = renderChartBitmap(cd, 500, 280);
                         elements.add(new WordElement(chartBmp));
                     } catch (Exception ignored) {}
@@ -1045,23 +1119,37 @@ public class PdfProcessor {
                 while (imgIdx < extractedImages.size()) {
                     elements.add(new WordElement(extractedImages.get(imgIdx++)));
                 }
-            }
-        } catch (Exception e) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(wordFile), StandardCharsets.UTF_8))) {
-                StringBuilder raw = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    raw.append(line).append("\n");
-                }
-                String content = cleanWordText(raw.toString());
-                String[] lines = content.split("\n");
-                for (String l : lines) {
-                    String trimmedLine = l.trim();
-                    if (trimmedLine.length() > 2) {
-                        elements.add(new WordElement(new WordParagraph(trimmedLine, false, false, false, false)));
+
+                if (elements.isEmpty() && documentXml != null) {
+                    List<WordRun> fallbackRuns = new ArrayList<>();
+                    int tIndex = 0;
+                    while (true) {
+                        int tStart = documentXml.indexOf("<w:t", tIndex);
+                        if (tStart == -1) break;
+                        int close = documentXml.indexOf(">", tStart);
+                        if (close == -1) break;
+                        int tEnd = documentXml.indexOf("</w:t>", close);
+                        if (tEnd == -1) break;
+                        String rawText = documentXml.substring(close + 1, tEnd);
+                        String cleaned = cleanWordText(rawText);
+                        if (!cleaned.isEmpty()) {
+                            fallbackRuns.add(new WordRun(cleaned, false, false, 14f));
+                        }
+                        tIndex = tEnd + 6;
+                    }
+                    if (!fallbackRuns.isEmpty()) {
+                        elements.add(new WordElement(new WordParagraph(fallbackRuns, Paint.Align.LEFT, false, false, null)));
                     }
                 }
-            } catch (Exception ignored) {}
+            }
+        } catch (Exception e) {
+            Log.e("PdfProcessor", "Error reading Word file entries", e);
+            if (elements.isEmpty()) {
+                List<String> docLines = extractDocBinaryText(wordFile);
+                for (String line : docLines) {
+                    elements.add(new WordElement(new WordParagraph(line, false, false, false, false)));
+                }
+            }
         }
 
         if (elements.isEmpty()) {
@@ -1104,33 +1192,6 @@ public class PdfProcessor {
         gridPaint.setColor(0xFFD1D1D1);
         gridPaint.setStyle(Paint.Style.STROKE);
         gridPaint.setStrokeWidth(1.5f);
-
-        if (elements.isEmpty()) {
-            try {
-                java.lang.Class<?> hwpfClass = java.lang.Class.forName("org.apache.poi.hwpf.HWPFDocument");
-                java.lang.Class<?> extractorClass = java.lang.Class.forName("org.apache.poi.hwpf.extractor.WordExtractor");
-                java.lang.reflect.Constructor<?> hwpfCons = hwpfClass.getConstructor(java.io.InputStream.class);
-                java.lang.reflect.Constructor<?> extCons = extractorClass.getConstructor(hwpfClass);
-                try (FileInputStream fis = new FileInputStream(wordFile)) {
-                    Object docObj = hwpfCons.newInstance(fis);
-                    Object extObj = extCons.newInstance(docObj);
-                    java.lang.reflect.Method getPara = extractorClass.getMethod("getParagraphText");
-                    String[] paragraphs = (String[]) getPara.invoke(extObj);
-                    if (paragraphs != null) {
-                        for (String para : paragraphs) {
-                            String cleaned = cleanWordText(para).trim();
-                            if (!cleaned.isEmpty()) {
-                                elements.add(new WordElement(new WordParagraph(cleaned, false, false, false, false)));
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable ignored) {}
-        }
-
-        if (elements.isEmpty()) {
-            elements.add(new WordElement(new WordParagraph(wordFile.getName(), true, false, false, false)));
-        }
 
         Paint cellHeaderBgPaint = new Paint();
         cellHeaderBgPaint.setColor(0xFFF0F4F8);

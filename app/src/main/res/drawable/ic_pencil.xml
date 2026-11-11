@@ -1,10 +1,23 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="32dp"
-    android:height="32dp"
+    android:width="28dp"
+    android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Bold high-visibility white pencil icon -->
+    <!-- Classic Yellow/Orange Diagonal Pencil matching Screenshot -->
+    <!-- Pencil body (yellow) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:path="M3,17.25V21h3.75L17.81,9.94l-3.75-3.75L3,17.25z M20.71,7.04c0.39-0.39,0.39-1.02,0-1.41l-2.34-2.34c-0.39-0.39-1.02-0.39-1.41,0l-1.83,1.83l3.75,3.75L20.71,7.04z" />
+        android:fillColor="#FFCA28"
+        android:path="M17.81,9.94L6.75,21H3V17.25L14.06,6.19L17.81,9.94Z" />
+    <!-- Eraser (pink) -->
+    <path
+        android:fillColor="#EC407A"
+        android:path="M20.71,7.04L18.88,8.87L15.13,5.12L16.96,3.29C17.15,3.1 17.41,3 17.66,3C17.92,3 18.17,3.09 18.37,3.29L20.71,5.63C21.1,6.02 21.1,6.65 20.71,7.04Z" />
+    <!-- Metal band / ferrule (silver) -->
+    <path
+        android:fillColor="#CFD8DC"
+        android:path="M17.81,9.94L14.06,6.19L15.13,5.12L18.88,8.87L17.81,9.94Z" />
+    <!-- Pencil tip (dark graphite) -->
+    <path
+        android:fillColor="#37474F"
+        android:path="M3,21L5.92,19L3,17.25V21Z" />
 </vector>

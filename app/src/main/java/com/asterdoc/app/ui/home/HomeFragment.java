@@ -30,8 +30,11 @@ import com.asterdoc.app.ui.tools.ToolAdapter;
 import com.asterdoc.app.ui.tools.ToolItem;
 import com.asterdoc.app.ui.tools.arranger.PdfArrangerActivity;
 import com.asterdoc.app.ui.tools.sign.SignPdfActivity;
+import com.asterdoc.app.ui.viewer.ExcelViewerActivity;
 import com.asterdoc.app.ui.viewer.PdfViewerActivity;
 import com.asterdoc.app.util.BrandedToast;
+import com.asterdoc.app.data.AsterineStorageManager;
+import android.util.Log;
 import android.widget.TextView;
 
 import java.io.File;
@@ -43,7 +46,7 @@ import java.util.List;
 public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickListener {
 
     private DocumentRepository repository;
-    private TextView tvCountAll, tvCountPdf, tvCountWord, tvCountExcel, tvCountPpt, tvCountTxt, tvCountTrash, tvCountFav;
+    private TextView tvCountAll, tvCountPdf, tvCountWord, tvCountExcel, tvCountTxt, tvCountTrash, tvCountFav;
 
     private final ActivityResultLauncher<Intent> phoneDocPickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -98,7 +101,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         tvCountPdf = view.findViewById(R.id.tvCountPdf);
         tvCountWord = view.findViewById(R.id.tvCountWord);
         tvCountExcel = view.findViewById(R.id.tvCountExcel);
-        tvCountPpt = view.findViewById(R.id.tvCountPpt);
         tvCountTxt = view.findViewById(R.id.tvCountTxt);
         tvCountTrash = view.findViewById(R.id.tvCountTrash);
         tvCountFav = view.findViewById(R.id.tvCountFav);
@@ -108,7 +110,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         View cardCatPdf = view.findViewById(R.id.cardCatPdf);
         View cardCatWord = view.findViewById(R.id.cardCatWord);
         View cardCatExcel = view.findViewById(R.id.cardCatExcel);
-        View cardCatPpt = view.findViewById(R.id.cardCatPpt);
         View cardCatTxt = view.findViewById(R.id.cardCatTxt);
         View cardCatTrash = view.findViewById(R.id.cardCatTrash);
         View cardCatFav = view.findViewById(R.id.cardCatFav);
@@ -117,7 +118,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         if (cardCatPdf != null) cardCatPdf.setOnClickListener(v -> openCategoryFileList("PDF"));
         if (cardCatWord != null) cardCatWord.setOnClickListener(v -> openCategoryFileList("WORD"));
         if (cardCatExcel != null) cardCatExcel.setOnClickListener(v -> openCategoryFileList("EXCEL"));
-        if (cardCatPpt != null) cardCatPpt.setOnClickListener(v -> openCategoryFileList("PPT"));
         if (cardCatTxt != null) cardCatTxt.setOnClickListener(v -> openCategoryFileList("TXT"));
         if (cardCatTrash != null) cardCatTrash.setOnClickListener(v -> openCategoryFileList("TRASH"));
         if (cardCatFav != null) cardCatFav.setOnClickListener(v -> openCategoryFileList("FAVORITES"));
@@ -154,7 +154,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         int countPdf = 0;
         int countWord = 0;
         int countExcel = 0;
-        int countPpt = 0;
         int countTxt = 0;
         int countFav = 0;
 
@@ -170,8 +169,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
                 countWord++;
             } else if ("EXCEL".equals(type) || name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
                 countExcel++;
-            } else if ("PPT".equals(type) || name.endsWith(".pptx") || name.endsWith(".ppt")) {
-                countPpt++;
             } else if ("TXT".equals(type) || name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md")) {
                 countTxt++;
             }
@@ -181,7 +178,6 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
         if (tvCountPdf != null) tvCountPdf.setText(String.valueOf(countPdf));
         if (tvCountWord != null) tvCountWord.setText(String.valueOf(countWord));
         if (tvCountExcel != null) tvCountExcel.setText(String.valueOf(countExcel));
-        if (tvCountPpt != null) tvCountPpt.setText(String.valueOf(countPpt));
         if (tvCountTxt != null) tvCountTxt.setText(String.valueOf(countTxt));
         if (tvCountFav != null) tvCountFav.setText(String.valueOf(countFav));
         if (tvCountTrash != null) tvCountTrash.setText(String.valueOf(repository.getTrashDocuments().size()));
@@ -260,32 +256,54 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
     }
 
     private void importAndOpenDocument(Uri uri) {
+        if (uri == null) {
+            BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+            return;
+        }
+
         try {
-            InputStream is = requireContext().getContentResolver().openInputStream(uri);
             String fileName = getFileNameFromUri(uri);
-            File dir = PdfProcessor.getAsterDocsDirectory(requireContext());
-            File importedFile = new File(dir, fileName);
-
-            FileOutputStream fos = new FileOutputStream(importedFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while (is != null && (len = is.read(buf)) > 0) {
-                fos.write(buf, 0, len);
+            if (fileName == null || fileName.trim().isEmpty()) {
+                fileName = "Document_" + System.currentTimeMillis() + ".pdf";
             }
-            if (is != null) is.close();
-            fos.close();
+            String safeFileName = fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
+            String lower = safeFileName.toLowerCase();
 
-            String type = "PDF";
-            String lower = fileName.toLowerCase();
             if (lower.endsWith(".pptx") || lower.endsWith(".ppt") || lower.endsWith(".pps") || lower.endsWith(".ppsx")) {
                 BrandedToast.show(requireContext(), "PowerPoint files are currently not supported by Asterine.");
                 return;
-            } else if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+            }
+
+            String type = "PDF";
+            if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt")) {
                 type = "WORD";
-            } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
+            } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv")) {
                 type = "EXCEL";
-            } else if (lower.endsWith(".txt")) {
+            } else if (lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".xml") || lower.endsWith(".json")) {
                 type = "TXT";
+            }
+
+            File importedFile = AsterineStorageManager.getFileForOperation(requireContext(), type, safeFileName);
+            if (importedFile == null) {
+                importedFile = new File(requireContext().getCacheDir(), safeFileName);
+            }
+
+            try (InputStream is = requireContext().getContentResolver().openInputStream(uri);
+                 FileOutputStream fos = new FileOutputStream(importedFile)) {
+                if (is == null) {
+                    BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+                    return;
+                }
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = is.read(buf)) > 0) {
+                    fos.write(buf, 0, len);
+                }
+            }
+
+            if (!importedFile.exists() || importedFile.length() == 0) {
+                BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+                return;
             }
 
             DocumentItem item = new DocumentItem(
@@ -301,12 +319,19 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
                 repository.addDocument(item);
             }
 
-            Intent intent = new Intent(requireContext(), PdfViewerActivity.class);
-            intent.putExtra("FILE_PATH", importedFile.getAbsolutePath());
-            startActivity(intent);
+            if ("EXCEL".equals(type)) {
+                Intent intent = new Intent(requireContext(), ExcelViewerActivity.class);
+                intent.putExtra("FILE_PATH", importedFile.getAbsolutePath());
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(requireContext(), PdfViewerActivity.class);
+                intent.putExtra("FILE_PATH", importedFile.getAbsolutePath());
+                startActivity(intent);
+            }
 
         } catch (Exception e) {
-            BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+            Log.e("ImportError", "Failed to import document", e);
+            BrandedToast.show(requireContext(), getString(R.string.msg_import_error) + " " + e.getMessage());
         }
     }
 

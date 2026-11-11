@@ -20,7 +20,7 @@
     <string name="recent_docs">Recent Documents</string>
     <string name="see_all">See All</string>
     <string name="open_phone_doc">Open Document from Phone</string>
-    <string name="open_doc_sub">Select any PDF, Word, Excel, PPT, or Text file</string>
+    <string name="open_doc_sub">Select any PDF, Word, Excel, or Text file</string>
     <string name="convert_scan_sub">Convert, scan, edit, compress, and sign your PDFs</string>
     <string name="general_settings">General Settings</string>
     <string name="about_privacy">About &amp; Privacy</string>
@@ -151,7 +151,7 @@
     <string name="msg_doc_restored">Document Restored</string>
     <string name="msg_deleted_perm">Deleted permanently</string>
     <string name="msg_trash_emptied">Trash emptied successfully</string>
-    <string name="select_doc_picker">Select Document (PDF, Word, Excel, PPT)</string>
+    <string name="select_doc_picker">Select Document (PDF, Word, Excel, Text)</string>
     <string name="msg_import_error">Unable to import selected document.</string>
     <string name="msg_prep_doc_view">Preparing document view...</string>
     <string name="faq_knowledge_base">💡 Asterine Knowledge Base</string>
@@ -289,7 +289,7 @@
     <string name="pdf_files">PDF Files</string>
     <string name="word_files">Word Files</string>
     <string name="excel_files">Excel Files</string>
-    <string name="ppt_files">PPT Files</string>
+
     <string name="txt_files">Text Files</string>
     <string name="favorite_files">Favorite Files</string>
     <string name="trash_title">Trash</string>

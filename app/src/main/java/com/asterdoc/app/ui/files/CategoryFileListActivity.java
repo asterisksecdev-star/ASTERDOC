@@ -188,7 +188,7 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
                 tvCategoryTitle.setText(R.string.excel_files);
                 break;
             case "PPT":
-                tvCategoryTitle.setText(R.string.ppt_files);
+                tvCategoryTitle.setText("PPT Files");
                 break;
             case "TXT":
                 tvCategoryTitle.setText(R.string.txt_files);
@@ -565,8 +565,12 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
             return;
         }
 
+        if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") || name.endsWith(".ppsx")) {
+            BrandedToast.show(this, "PowerPoint files are currently not supported by Asterine.");
+            return;
+        }
+
         if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") ||
-            name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") ||
             name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
             BrandedToast.show(this, getString(R.string.msg_prep_doc_view));
             final File targetFile = file;
@@ -575,8 +579,6 @@ public class CategoryFileListActivity extends AppCompatActivity implements Docum
                 try {
                     if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
                         viewableFile = PdfProcessor.wordToPdf(this, targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
-                    } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp")) {
-                        viewableFile = PdfProcessor.pptxToPdf(this, targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                     } else {
                         viewableFile = PdfProcessor.textToPdf(this, targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                     }

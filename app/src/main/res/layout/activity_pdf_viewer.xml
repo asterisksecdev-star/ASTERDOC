@@ -49,6 +49,7 @@
                 android:id="@+id/btnTopWord"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
+                android:layout_marginStart="8dp"
                 android:background="@drawable/bg_circle_white"
                 android:clickable="true"
                 android:focusable="true">
@@ -62,6 +63,8 @@
                     android:textSize="17sp"
                     android:textStyle="bold" />
             </FrameLayout>
+
+
 
             <!-- Rotate Action Button (White Circle) -->
             <FrameLayout
@@ -79,7 +82,7 @@
                     android:layout_gravity="center"
                     android:contentDescription="Rotate"
                     android:src="@drawable/ic_top_rotate"
-                    app:tint="#000000" />
+                    app:tint="#0288D1" />
             </FrameLayout>
 
             <!-- Info Action Button (White Circle) -->
@@ -98,7 +101,7 @@
                     android:layout_gravity="center"
                     android:contentDescription="Details"
                     android:src="@drawable/ic_info"
-                    app:tint="#000000" />
+                    app:tint="#0288D1" />
             </FrameLayout>
 
             <!-- Share Action Button (White Circle) -->
@@ -117,7 +120,7 @@
                     android:layout_gravity="center"
                     android:contentDescription="Share"
                     android:src="@drawable/ic_top_share"
-                    app:tint="#000000" />
+                    app:tint="#D32F2F" />
             </FrameLayout>
 
             <!-- Menu Action Button (White Circle) -->
@@ -282,84 +285,7 @@
         android:contentDescription="Edit document"
         android:src="@drawable/ic_pencil"
         app:backgroundTint="#FF3B30"
-        app:fabSize="normal"
-        app:tint="#FFFFFF" />
-
-    <!-- Google Drive Control Pill Bar (Hidden by default, used for zoom/grid) -->
-    <LinearLayout
-        android:id="@+id/cardBottomControls"
-        android:layout_width="wrap_content"
-        android:layout_height="52dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="24dp"
-        android:background="@drawable/bg_drive_floating_bar"
-        android:elevation="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:visibility="gone">
-
-        <ImageButton
-            android:id="@+id/btnBottomGrid"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Grid view"
-            android:src="@drawable/ic_grid_view"
-            app:tint="#E3E2E6" />
-
-        <ImageButton
-            android:id="@+id/btnPrevPage"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="2dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Previous Page"
-            android:src="@drawable/ic_chevron_left"
-            app:tint="#E3E2E6" />
-
-        <TextView
-            android:id="@+id/tvReaderPageIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:layout_marginHorizontal="6dp"
-            android:background="@drawable/bg_drive_page_pill"
-            android:gravity="center"
-            android:paddingHorizontal="14dp"
-            android:text="1 / 1"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <ImageButton
-            android:id="@+id/btnNextPage"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginEnd="2dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Next Page"
-            android:src="@drawable/ic_chevron_right"
-            app:tint="#E3E2E6" />
-
-        <ImageButton
-            android:id="@+id/btnZoomOut"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Zoom Out"
-            android:src="@drawable/ic_zoom_out"
-            app:tint="#E3E2E6" />
-
-        <ImageButton
-            android:id="@+id/btnZoomIn"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Zoom In"
-            android:src="@drawable/ic_zoom_in"
-            app:tint="#A8C7FA" />
-
-    </LinearLayout>
+        app:fabSize="normal" />
 
     <!-- Draw & Edit Markup Toolbar Overlay -->
     <com.google.android.material.card.MaterialCardView
@@ -565,5 +491,19 @@
         android:textSize="16sp"
         android:textStyle="bold"
         android:visibility="gone" />
+
+    <!-- Floating Toggle Tools Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabToggleTools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
+        android:contentDescription="Restore controls"
+        android:src="@drawable/ic_grid_view"
+        android:visibility="gone"
+        app:backgroundTint="#2D2F31"
+        app:fabSize="mini"
+        app:tint="#A8C7FA" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -36,6 +36,8 @@ import com.asterdoc.app.ui.home.DocumentAdapter;
 import com.asterdoc.app.ui.viewer.ExcelViewerActivity;
 import com.asterdoc.app.ui.viewer.PdfViewerActivity;
 import com.asterdoc.app.util.BrandedToast;
+import com.asterdoc.app.data.AsterineStorageManager;
+import android.util.Log;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
@@ -111,31 +113,54 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
     }
 
     private void importAndOpenDocument(Uri uri) {
-        try {
-            InputStream is = requireContext().getContentResolver().openInputStream(uri);
-            String fileName = getFileNameFromUri(uri);
-            File dir = PdfProcessor.getAsterDocsDirectory(requireContext());
-            File importedFile = new File(dir, fileName);
+        if (uri == null) {
+            BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+            return;
+        }
 
-            FileOutputStream fos = new FileOutputStream(importedFile);
-            byte[] buf = new byte[8192];
-            int len;
-            while (is != null && (len = is.read(buf)) > 0) {
-                fos.write(buf, 0, len);
+        try {
+            String fileName = getFileNameFromUri(uri);
+            if (fileName == null || fileName.trim().isEmpty()) {
+                fileName = "Document_" + System.currentTimeMillis() + ".pdf";
             }
-            if (is != null) is.close();
-            fos.close();
+            String safeFileName = fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
+            String lower = safeFileName.toLowerCase();
+
+            if (lower.endsWith(".pptx") || lower.endsWith(".ppt") || lower.endsWith(".pps") || lower.endsWith(".ppsx")) {
+                BrandedToast.show(requireContext(), "PowerPoint files are currently not supported by Asterine.");
+                return;
+            }
 
             String type = "PDF";
-            String lower = fileName.toLowerCase();
-            if (lower.endsWith(".docx") || lower.endsWith(".doc")) {
+            if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt")) {
                 type = "WORD";
-            } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
+            } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv")) {
                 type = "EXCEL";
-            } else if (lower.endsWith(".pptx") || lower.endsWith(".ppt")) {
-                type = "PPT";
-            } else if (lower.endsWith(".txt")) {
+            } else if (lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".xml") || lower.endsWith(".json")) {
                 type = "TXT";
+            }
+
+            File importedFile = AsterineStorageManager.getFileForOperation(requireContext(), type, safeFileName);
+            if (importedFile == null) {
+                importedFile = new File(requireContext().getCacheDir(), safeFileName);
+            }
+
+            try (InputStream is = requireContext().getContentResolver().openInputStream(uri);
+                 FileOutputStream fos = new FileOutputStream(importedFile)) {
+                if (is == null) {
+                    BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+                    return;
+                }
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = is.read(buf)) > 0) {
+                    fos.write(buf, 0, len);
+                }
+            }
+
+            if (!importedFile.exists() || importedFile.length() == 0) {
+                BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+                return;
             }
 
             DocumentItem item = new DocumentItem(
@@ -155,7 +180,8 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
             openDocument(item);
 
         } catch (Exception e) {
-            BrandedToast.show(requireContext(), getString(R.string.msg_import_error));
+            Log.e("ImportError", "Failed to import document", e);
+            BrandedToast.show(requireContext(), getString(R.string.msg_import_error) + " " + e.getMessage());
         }
     }
 
@@ -222,7 +248,6 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
         tabLayout.addTab(tabLayout.newTab().setText("PDF"));
         tabLayout.addTab(tabLayout.newTab().setText("Word"));
         tabLayout.addTab(tabLayout.newTab().setText("Excel"));
-        tabLayout.addTab(tabLayout.newTab().setText("PPT"));
         tabLayout.addTab(tabLayout.newTab().setText("TXT"));
 
         rvFilesList.setHasFixedSize(true);
@@ -274,12 +299,6 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 }
                 return filtered;
             case 4:
-                for (DocumentItem item : allDocs) {
-                    String name = item.getName() != null ? item.getName().toLowerCase() : "";
-                    if ("PPT".equalsIgnoreCase(item.getType()) || name.endsWith(".pptx") || name.endsWith(".ppt")) filtered.add(item);
-                }
-                return filtered;
-            case 5:
                 for (DocumentItem item : allDocs) {
                     String name = item.getName() != null ? item.getName().toLowerCase() : "";
                     if ("TXT".equalsIgnoreCase(item.getType()) || name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md")) filtered.add(item);
@@ -491,8 +510,12 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
             return;
         }
 
+        if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") || name.endsWith(".ppsx")) {
+            BrandedToast.show(requireContext(), "PowerPoint files are currently not supported by Asterine.");
+            return;
+        }
+
         if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") ||
-            name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") ||
             name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
             BrandedToast.show(requireContext(), getString(R.string.msg_prep_doc_view));
             final File targetFile = file;
@@ -501,8 +524,6 @@ public class FilesFragment extends Fragment implements DocumentAdapter.OnDocumen
                 try {
                     if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
                         viewableFile = PdfProcessor.wordToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
-                    } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp")) {
-                        viewableFile = PdfProcessor.pptxToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                     } else {
                         viewableFile = PdfProcessor.textToPdf(requireContext(), targetFile, targetFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                     }

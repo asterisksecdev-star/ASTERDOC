@@ -3,34 +3,34 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#141518"
+    android:background="@color/background_light"
     android:orientation="vertical">
 
     <!-- Top Action Toolbar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#1A1B1F"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/surface_light"
         android:elevation="4dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="12dp">
+        android:paddingHorizontal="16dp">
 
         <FrameLayout
             android:id="@+id/btnCatBack"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:contentDescription="Back"
                 android:src="@drawable/ic_arrow_back"
-                app:tint="#FFFFFF" />
+                app:tint="@color/text_primary" />
 
         </FrameLayout>
 
@@ -41,41 +41,41 @@
             android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:text="PDF files"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/btnCatSelectAll"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Select all"
             android:padding="8dp"
             android:src="@android:drawable/checkbox_off_background"
-            app:tint="#FFFFFF" />
+            app:tint="@color/text_primary" />
 
         <ImageButton
             android:id="@+id/btnCatSort"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_marginStart="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Sort files"
             android:padding="8dp"
             android:src="@android:drawable/ic_menu_sort_by_size"
-            app:tint="#FFFFFF" />
+            app:tint="@color/text_primary" />
 
         <ImageButton
             android:id="@+id/btnCatSearch"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_marginStart="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Search files"
             android:padding="8dp"
             android:src="@android:drawable/ic_menu_search"
-            app:tint="#FFFFFF" />
+            app:tint="@color/text_primary" />
 
     </LinearLayout>
 
@@ -83,8 +83,8 @@
     <LinearLayout
         android:id="@+id/layoutCatSearchBar"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="#1A1B1F"
+        android:layout_height="56dp"
+        android:background="@color/surface_light"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
@@ -93,73 +93,69 @@
         <EditText
             android:id="@+id/etCatSearchQuery"
             android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_height="40dp"
             android:layout_weight="1"
             android:background="@drawable/bg_drive_search_bar"
             android:hint="@string/search_files_hint"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:paddingHorizontal="14dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#8E918F"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
             android:textSize="14sp" />
 
         <ImageButton
             android:id="@+id/btnCatCloseSearch"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginStart="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Close search"
             android:src="@drawable/ic_close"
-            app:tint="#FFFFFF" />
+            app:tint="@color/text_secondary" />
 
     </LinearLayout>
-
-
 
     <!-- Empty Trash Banner Card (Shown only in Trash category) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardEmptyTrash"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="14dp"
-        android:layout_marginTop="14dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
         android:visibility="gone"
-        app:cardBackgroundColor="#2E1A1D"
-        app:cardCornerRadius="12dp"
+        app:cardBackgroundColor="@color/surface_light"
+        app:cardCornerRadius="16dp"
         app:cardElevation="2dp"
-        app:strokeColor="#442226"
-        app:strokeWidth="1dp">
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="12dp">
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/empty_trash_banner_desc"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnActivityEmptyTrash"
                 style="@style/Widget.Material3.Button"
                 android:layout_width="wrap_content"
-                android:layout_height="38dp"
+                android:layout_height="40dp"
                 android:text="@string/btn_empty_trash_action"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/white"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 app:backgroundTint="#EA4335"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="10dp" />
 
         </LinearLayout>
 
@@ -179,7 +175,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingVertical="8dp" />
+        android:paddingTop="8dp"
+        android:paddingBottom="88dp" />
 
     <!-- Empty State TextView -->
     <TextView
@@ -190,7 +187,7 @@
         android:gravity="center"
         android:padding="32dp"
         android:text="@string/no_files_yet"
-        android:textColor="#8E919A"
+        android:textColor="@color/text_secondary"
         android:textSize="16sp"
         android:visibility="gone" />
 
@@ -202,7 +199,7 @@
         android:layout_gravity="center_horizontal"
         android:gravity="center"
         android:minHeight="50dp"
-        android:background="#121316"
+        android:background="@color/background_light"
         android:visibility="gone" />
 
 </LinearLayout>
