@@ -227,47 +227,69 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
         new Thread(() -> {
             try {
+                String originalDisplayName = file.getName();
+                if (originalDisplayName.startsWith("local_view_") || originalDisplayName.startsWith("open_doc_")) {
+                    int pos = originalDisplayName.indexOf('_', 11);
+                    if (pos != -1 && pos < originalDisplayName.length() - 1) {
+                        originalDisplayName = originalDisplayName.substring(pos + 1);
+                    }
+                }
+
                 File workingFile = file;
                 try {
-                    File cacheCopy = new File(getCacheDir(), "local_view_" + System.currentTimeMillis() + "_" + file.getName());
-                    try (FileInputStream fis = new FileInputStream(file);
-                         FileOutputStream fos = new FileOutputStream(cacheCopy)) {
-                        byte[] buf = new byte[8192];
-                        int len;
-                        while ((len = fis.read(buf)) > 0) {
-                            fos.write(buf, 0, len);
+                    String safeName = originalDisplayName.replaceAll("[\\\\/:*?\"<>|]", "_");
+                    File cacheCopy = new File(getCacheDir(), safeName);
+                    if (!cacheCopy.getAbsolutePath().equalsIgnoreCase(file.getAbsolutePath())) {
+                        try (FileInputStream fis = new FileInputStream(file);
+                             FileOutputStream fos = new FileOutputStream(cacheCopy)) {
+                            byte[] buf = new byte[8192];
+                            int len;
+                            while ((len = fis.read(buf)) > 0) {
+                                fos.write(buf, 0, len);
+                            }
                         }
-                    }
-                    if (cacheCopy.exists() && cacheCopy.length() > 0) {
-                        workingFile = cacheCopy;
+                        if (cacheCopy.exists() && cacheCopy.length() > 0) {
+                            workingFile = cacheCopy;
+                        }
                     }
                 } catch (Exception ignored) {}
 
                 File processed = workingFile;
-                String name = workingFile.getName().toLowerCase();
+                String name = originalDisplayName.toLowerCase();
                 if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
                     sourceWordFile = workingFile;
                     processed = PdfProcessor.wordToPdf(
                             this,
                             workingFile,
-                            workingFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf"
+                            originalDisplayName.replaceFirst("\\.[^.]+$", "") + "_view.pdf"
                     );
                 } else if (name.endsWith(".pptx") || name.endsWith(".ppt") || name.endsWith(".pps") || name.endsWith(".odp") || name.endsWith(".ppsx")) {
                     throw new IllegalArgumentException("PowerPoint files are currently not supported by Asterine.");
                 } else if (name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".md") || name.endsWith(".html")) {
-                    processed = PdfProcessor.textToPdf(this, workingFile, workingFile.getName().replaceFirst("\\.[^.]+$", "") + "_view.pdf");
+                    processed = PdfProcessor.textToPdf(this, workingFile, originalDisplayName.replaceFirst("\\.[^.]+$", "") + "_view.pdf");
                 }
 
+                final String finalDisplayName = originalDisplayName;
                 File finalProcessed = processed;
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
                     pdfFile = finalProcessed;
                     if (isFromUri && pdfFile != null && pdfFile.exists()) {
+                        String lower = finalDisplayName.toLowerCase();
+                        String docType = "PDF";
+                        if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt") || lower.endsWith(".dot") || lower.endsWith(".docm") || lower.endsWith(".dotx") || lower.endsWith(".dotm")) {
+                            docType = "WORD";
+                        } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv")) {
+                            docType = "EXCEL";
+                        } else if (lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".md") || lower.endsWith(".xml") || lower.endsWith(".json")) {
+                            docType = "TXT";
+                        }
+
                         DocumentItem item = new DocumentItem(
                                 String.valueOf(System.currentTimeMillis()),
-                                pdfFile.getName(),
+                                finalDisplayName,
                                 pdfFile.getAbsolutePath(),
-                                "PDF",
+                                docType,
                                 pdfFile.length(),
                                 System.currentTimeMillis(),
                                 "Recent"
