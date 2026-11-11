@@ -15,7 +15,7 @@ android {
         applicationId = "com.asterdoc.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9
+        versionCode = 20
         versionName = "1.2"
 
         // Google test ad-unit IDs — replace with your own before production
