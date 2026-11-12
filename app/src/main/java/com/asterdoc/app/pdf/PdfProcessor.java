@@ -1,5 +1,6 @@
 package com.asterdoc.app.pdf;
 import document.OfficeDocumentRenderer;
+import document.OfficeDocumentRenderer;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -710,7 +711,15 @@ public class PdfProcessor {
             StringBuilder currentRun = new StringBuilder();
             for (int i = 0; i < read - 1; i += 2) {
                 char c = (char) (((bytes[i + 1] & 0xFF) << 8) | (bytes[i] & 0xFF));
-                if ((c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t' || (c >= 0x00A0 && c <= 0x02F0)) {
+                if (c == '\n' || c == '\r') {
+                    if (currentRun.length() >= 3) {
+                        String str = cleanWordText(currentRun.toString()).trim();
+                        if (str.length() >= 2 && !isControlJunk(str)) {
+                            paragraphs.add(str);
+                        }
+                    }
+                    currentRun.setLength(0);
+                } else if ((c >= 32 && c <= 126) || c == '\t' || (c >= 0x00A0 && c <= 0x02F0)) {
                     currentRun.append(c);
                 } else {
                     if (currentRun.length() >= 4) {
@@ -722,44 +731,47 @@ public class PdfProcessor {
                     currentRun.setLength(0);
                 }
             }
-            if (currentRun.length() >= 4) {
+            if (currentRun.length() >= 3) {
                 String str = cleanWordText(currentRun.toString()).trim();
-                if (str.length() >= 3 && !isControlJunk(str)) {
+                if (str.length() >= 2 && !isControlJunk(str)) {
                     paragraphs.add(str);
-                }
-            }
-
-            if (paragraphs.isEmpty()) {
-                StringBuilder asciiRun = new StringBuilder();
-                for (int i = 0; i < read; i++) {
-                    char c = (char) (bytes[i] & 0xFF);
-                    if ((c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t') {
-                        asciiRun.append(c);
-                    } else {
-                        if (asciiRun.length() >= 5) {
-                            String str = cleanWordText(asciiRun.toString()).trim();
-                            if (str.length() >= 4 && !isControlJunk(str)) {
-                                paragraphs.add(str);
-                            }
-                        }
-                        asciiRun.setLength(0);
-                    }
                 }
             }
         } catch (Exception ignored) {}
         return paragraphs;
     }
 
-    private static boolean isControlJunk(String str) {
-        if (str.startsWith("Root Entry") || str.startsWith("WordDocument") || str.startsWith("1Table") || str.startsWith("0Table") || str.startsWith("CompObj") || str.startsWith("Data")) {
+    public static boolean isControlJunk(String str) {
+        if (str == null) return true;
+        String s = str.trim();
+        if (s.isEmpty()) return true;
+
+        if (s.startsWith("Root Entry") || s.startsWith("WordDocument") || s.startsWith("1Table") || s.startsWith("0Table") || s.startsWith("CompObj") || s.startsWith("Data") || s.startsWith("SummaryInformation") || s.startsWith("DocumentSummaryInformation")) {
             return true;
         }
+
+        if (s.contains("[Content_Types]") || s.contains("_rels/") || s.contains("theme/") || s.endsWith(".xmlPK") || s.endsWith(".relsPK") || s.contains(".xmlPK")) {
+            return true;
+        }
+
+        if (s.startsWith("Microsoft Office") || s.startsWith("Office Word") || s.equalsIgnoreCase("MSWordDoc") || s.startsWith("Word.Document") || s.contains("MERGEFORMAT") || s.startsWith("PAGE \\*") || s.equals("| Page") || s.contains("WRMIAIMAIMA")) {
+            return true;
+        }
+
+        if (s.equalsIgnoreCase("Normal") || s.equalsIgnoreCase("Default Paragraph Font") || s.equalsIgnoreCase("Table Normal") || s.equalsIgnoreCase("No List") || s.equalsIgnoreCase("List Paragraph") || s.equalsIgnoreCase("Header") || s.equalsIgnoreCase("Footer") || s.equalsIgnoreCase("Header Char") || s.equalsIgnoreCase("Footer Char") || s.equalsIgnoreCase("Unknown") || s.startsWith("List Paragraph Char") || s.startsWith("Table Grid")) {
+            return true;
+        }
+
+        if (s.equalsIgnoreCase("Times New Roman") || s.equalsIgnoreCase("Symbol") || s.equalsIgnoreCase("Arial") || s.equalsIgnoreCase("Palatino Linotype") || s.equalsIgnoreCase("Calibri Light") || s.equalsIgnoreCase("Calibri") || s.equalsIgnoreCase("SimSun") || s.equalsIgnoreCase("Courier New") || s.equalsIgnoreCase("Wingdings") || s.equalsIgnoreCase("Cambria Math") || s.equalsIgnoreCase("User")) {
+            return true;
+        }
+
         int nonAscii = 0;
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
             if (c < 32 || c > 126) nonAscii++;
         }
-        return (float) nonAscii / str.length() > 0.35f;
+        return (float) nonAscii / s.length() > 0.35f;
     }
 
     public static File wordToPdf(
@@ -1274,7 +1286,7 @@ public class PdfProcessor {
         return outputFile;
     }
 
-    private static boolean isZipArchive(File file) {
+    public static boolean isZipArchive(File file) {
         try (FileInputStream fis = new FileInputStream(file)) {
             byte[] header = new byte[4];
             int read = fis.read(header);

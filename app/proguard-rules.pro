@@ -1,0 +1,18 @@
+# Apache POI / XMLBeans / AWT / StAX missing classes warnings suppression for R8
+-dontwarn java.awt.Color
+-dontwarn javax.xml.stream.XMLEventFactory
+-dontwarn javax.xml.stream.events.Namespace
+-dontwarn org.apache.xmlbeans.SchemaComponent
+-dontwarn org.apache.xmlbeans.SchemaType
+-dontwarn org.apache.xmlbeans.SchemaTypeLoader
+-dontwarn org.apache.xmlbeans.SchemaTypeSystem
+-dontwarn org.apache.xmlbeans.StringEnumAbstractBase$Table
+-dontwarn org.apache.xmlbeans.StringEnumAbstractBase
+-dontwarn org.apache.xmlbeans.XmlBeans
+-dontwarn org.apache.xmlbeans.XmlCursor$TokenType
+-dontwarn org.apache.xmlbeans.XmlCursor
+-dontwarn org.apache.xmlbeans.XmlException
+-dontwarn org.apache.xmlbeans.XmlObject
+-dontwarn org.apache.xmlbeans.XmlOptions
+-dontwarn org.apache.xmlbeans.XmlString
+-dontwarn org.apache.xmlbeans.impl.common.SystemCache

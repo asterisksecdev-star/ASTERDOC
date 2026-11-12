@@ -12,6 +12,6 @@ public final class OfficeDocumentRenderer {
         if (sourceDoc == null || !sourceDoc.exists() || sourceDoc.length() == 0) {
             throw new IllegalArgumentException("Document does not exist or is empty.");
         }
-        return DocumentConversionManager.convertDocumentToPdf(context, sourceDoc, outputPdf);
+        return WordDocumentRenderer.convertToPdf(context, sourceDoc, outputPdf);
     }
 }

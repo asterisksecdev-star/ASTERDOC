@@ -285,8 +285,14 @@ public final class OfficeWordRenderer {
         PdfDocument pdfDocument = new PdfDocument();
         Paint textPaint = new Paint();
         textPaint.setColor(0xFF1F1F1F);
-        textPaint.setTextSize(14f);
+        textPaint.setTextSize(13f);
         textPaint.setAntiAlias(true);
+
+        Paint headingPaint = new Paint();
+        headingPaint.setColor(0xFF111111);
+        headingPaint.setTextSize(15f);
+        headingPaint.setFakeBoldText(true);
+        headingPaint.setAntiAlias(true);
 
         Paint tableTextPaint = new Paint();
         tableTextPaint.setColor(0xFF222222);
@@ -320,15 +326,20 @@ public final class OfficeWordRenderer {
                     y = 60;
                 }
                 String p = elem.paragraph;
+                Paint curPaint = textPaint;
+                if (p.length() < 90 && (p.startsWith("Question") || p.startsWith("Section") || p.startsWith("Chapter") || p.startsWith("Table") || p.startsWith("Figure") || (p.equals(p.toUpperCase(Locale.ROOT)) && p.length() > 3 && !p.contains(" ")))) {
+                    curPaint = headingPaint;
+                }
+
                 String[] words = p.split("\\s+");
                 StringBuilder line = new StringBuilder();
                 for (String w : words) {
-                    if (textPaint.measureText(line + " " + w) <= printableWidth) {
+                    if (curPaint.measureText(line + " " + w) <= printableWidth) {
                         if (line.length() > 0) line.append(" ");
                         line.append(w);
                     } else {
                         if (line.length() > 0) {
-                            canvas.drawText(line.toString(), margin, y, textPaint);
+                            canvas.drawText(line.toString(), margin, y, curPaint);
                             y += 22;
                             if (y > pageHeight - 60) {
                                 pdfDocument.finishPage(page);
@@ -343,7 +354,7 @@ public final class OfficeWordRenderer {
                     }
                 }
                 if (line.length() > 0) {
-                    canvas.drawText(line.toString(), margin, y, textPaint);
+                    canvas.drawText(line.toString(), margin, y, curPaint);
                     y += 28;
                 }
             } else if (elem.type == WordElement.Type.TABLE) {

@@ -15,7 +15,7 @@ android {
         applicationId = "com.asterdoc.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 20
+        versionCode = 23
         versionName = "1.2"
 
         // Google test ad-unit IDs — replace with your own before production
@@ -36,9 +36,16 @@ android {
         checkReleaseBuilds = false
     }
 
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -61,6 +68,8 @@ configurations.all {
     exclude(group = "stax", module = "stax")
     exclude(group = "xml-apis", module = "xml-apis")
     exclude(group = "org.apache.geronimo.specs", module = "geronimo-stax-api_1.0_spec")
+
+    // Apache POI XMLBeans exclusion
     exclude(group = "org.apache.xmlbeans", module = "xmlbeans")
 }
 
