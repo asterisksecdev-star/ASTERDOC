@@ -129,10 +129,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#1A2129"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#243447"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -182,10 +183,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#29181B"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#522228"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -243,10 +245,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#17202B"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#1F354F"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -296,10 +299,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#17291F"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#1E4D34"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -357,10 +361,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#292317"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#524322"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -418,10 +423,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#261A1A"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#4D2222"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -471,10 +477,11 @@
                     android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="#221729"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
+                    app:strokeColor="#402252"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -517,15 +524,15 @@
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- Quick Tools -->
+            <!-- Conversion Tools Category -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
-                android:text="Quick Tools"
+                android:text="Conversion Tools"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <!-- Convert tools -->
@@ -537,6 +544,24 @@
                 android:nestedScrollingEnabled="false"
                 android:paddingHorizontal="10dp" />
 
+            <!-- Native Ad 1 -->
+            <FrameLayout
+                android:id="@+id/nativeAdContainerHome1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp" />
+
+            <!-- Editing Tools Category -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Editing &amp; Organization Tools"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
             <!-- Edit tools -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvEditTools"
@@ -545,6 +570,24 @@
                 android:layout_marginTop="8dp"
                 android:nestedScrollingEnabled="false"
                 android:paddingHorizontal="10dp" />
+
+            <!-- Native Ad 2 -->
+            <FrameLayout
+                android:id="@+id/nativeAdContainerHome2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp" />
+
+            <!-- Scanning Tools Category -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Scanning &amp; Capture Tools"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <!-- Scan tools -->
             <androidx.recyclerview.widget.RecyclerView
@@ -555,9 +598,9 @@
                 android:nestedScrollingEnabled="false"
                 android:paddingHorizontal="10dp" />
 
-            <!-- Native advertisement -->
+            <!-- Native Ad 3 -->
             <FrameLayout
-                android:id="@+id/nativeAdContainerHome"
+                android:id="@+id/nativeAdContainerHome3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp" />

@@ -3,21 +3,21 @@
     android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Classic Yellow/Orange Diagonal Pencil matching Screenshot -->
+    <!-- Classic Yellow/Orange Diagonal Pencil -->
     <!-- Pencil body (yellow) -->
     <path
         android:fillColor="#FFCA28"
-        android:path="M17.81,9.94L6.75,21H3V17.25L14.06,6.19L17.81,9.94Z" />
+        android:pathData="M17.81,9.94L6.75,21H3V17.25L14.06,6.19L17.81,9.94Z" />
     <!-- Eraser (pink) -->
     <path
         android:fillColor="#EC407A"
-        android:path="M20.71,7.04L18.88,8.87L15.13,5.12L16.96,3.29C17.15,3.1 17.41,3 17.66,3C17.92,3 18.17,3.09 18.37,3.29L20.71,5.63C21.1,6.02 21.1,6.65 20.71,7.04Z" />
+        android:pathData="M20.71,7.04L18.88,8.87L15.13,5.12L16.96,3.29C17.15,3.1 17.41,3 17.66,3C17.92,3 18.17,3.09 18.37,3.29L20.71,5.63C21.1,6.02 21.1,6.65 20.71,7.04Z" />
     <!-- Metal band / ferrule (silver) -->
     <path
         android:fillColor="#CFD8DC"
-        android:path="M17.81,9.94L14.06,6.19L15.13,5.12L18.88,8.87L17.81,9.94Z" />
+        android:pathData="M17.81,9.94L14.06,6.19L15.13,5.12L18.88,8.87L17.81,9.94Z" />
     <!-- Pencil tip (dark graphite) -->
     <path
         android:fillColor="#37474F"
-        android:path="M3,21L5.92,19L3,17.25V21Z" />
+        android:pathData="M3,21L5.92,19L3,17.25V21Z" />
 </vector>

@@ -3,8 +3,7 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Solid bold downward triangle / arrow -->
     <path
         android:fillColor="#FFFFFF"
-        android:path="M12,20L21,8H3L12,20Z" />
+        android:pathData="M12,20L21,8H3L12,20Z" />
 </vector>

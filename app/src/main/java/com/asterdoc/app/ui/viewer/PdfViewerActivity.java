@@ -2,6 +2,7 @@ package com.asterdoc.app.ui.viewer;
 import android.util.Log;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Locale;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -31,6 +32,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.asterdoc.app.R;
+import com.asterdoc.app.util.BrandedToast;
 import com.asterdoc.app.data.DocumentItem;
 import com.asterdoc.app.data.DocumentRepository;
 import com.asterdoc.app.pdf.PdfProcessor;
@@ -72,7 +74,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private LinearLayoutManager layoutManager;
 
     private View layoutTopBarContainer;
-    private View btnTopBack, btnTopWord, btnTopRotate, btnTopInfo, btnTopShare, btnTopMenu;
+    private View btnTopBack, btnTopRotate, btnTopInfo, btnTopShare, btnTopMenu;
 
     private LinearLayout layoutVerticalScrollPill;
     private LinearLayout layoutPageCounterPill;
@@ -94,13 +96,12 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private Runnable zoomToastRunnable;
 
     private File sourceWordFile = null;
+    private String sourceExtension = ".pdf";
 
     private boolean isUiVisible = true;
     private boolean isEditMode = false;
     private int selectedColor = Color.RED;
     private DrawingCanvasView.ToolMode selectedTool = DrawingCanvasView.ToolMode.PEN;
-
-    private int currentOrientationMode = 0; // 0: Portrait, 1: Landscape, 2: Auto
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -194,7 +195,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             fabEditDocument.animate().alpha(1.0f).setDuration(200).start();
         }
 
-        floatingControlsHandler.postDelayed(floatingControlsRunnable, 1500);
+        floatingControlsHandler.postDelayed(floatingControlsRunnable, 4000);
     }
 
     private void hideFloatingControlsAnimated() {
@@ -233,6 +234,11 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
                     if (pos != -1 && pos < originalDisplayName.length() - 1) {
                         originalDisplayName = originalDisplayName.substring(pos + 1);
                     }
+                }
+
+                int dotIdx = originalDisplayName.lastIndexOf('.');
+                if (dotIdx != -1) {
+                    sourceExtension = originalDisplayName.substring(dotIdx).toLowerCase(Locale.ROOT);
                 }
 
                 File workingFile = file;
@@ -332,7 +338,6 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     private void initViews() {
         layoutTopBarContainer = findViewById(R.id.layoutTopBarContainer);
         btnTopBack = findViewById(R.id.btnTopBack);
-        btnTopWord = findViewById(R.id.btnTopWord);
         btnTopRotate = findViewById(R.id.btnTopRotate);
         btnTopInfo = findViewById(R.id.btnTopInfo);
         btnTopShare = findViewById(R.id.btnTopShare);
@@ -403,7 +408,6 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
     private void setupToolbar() {
         if (btnTopBack != null) btnTopBack.setOnClickListener(v -> finish());
-        if (btnTopWord != null) btnTopWord.setOnClickListener(v -> openToolForCurrentDoc("PDF_TO_WORD", "PDF to Word"));
         if (btnTopRotate != null) btnTopRotate.setOnClickListener(v -> toggleScreenOrientation());
         if (btnTopInfo != null) btnTopInfo.setOnClickListener(v -> showDocumentDetails());
         if (btnTopShare != null) btnTopShare.setOnClickListener(v -> shareFile());
@@ -560,16 +564,13 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
     }
 
     private void toggleScreenOrientation() {
-        currentOrientationMode = (currentOrientationMode + 1) % 3;
-        if (currentOrientationMode == 1) {
+        int currentOrientation = getResources().getConfiguration().orientation;
+        if (currentOrientation == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            Toast.makeText(this, "Landscape Mode", Toast.LENGTH_SHORT).show();
-        } else if (currentOrientationMode == 2) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-            Toast.makeText(this, "Auto-Rotate Mode", Toast.LENGTH_SHORT).show();
+            BrandedToast.show(this, "Landscape Mode");
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            Toast.makeText(this, "Portrait Mode", Toast.LENGTH_SHORT).show();
+            BrandedToast.show(this, "Portrait Mode");
         }
     }
 
@@ -797,23 +798,30 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         TextView tvInfoFilePath = dialog.findViewById(R.id.tvInfoFilePath);
         View btnCloseDocInfo = dialog.findViewById(R.id.btnCloseDocInfo);
 
-        String originalName = pdfFile != null ? pdfFile.getName() : "Document";
+        File targetFile = sourceWordFile != null && sourceWordFile.exists() ? sourceWordFile : pdfFile;
+        String originalName = targetFile != null ? targetFile.getName() : "Document";
+        if (originalName.startsWith("local_view_") || originalName.startsWith("open_doc_")) {
+            int pos = originalName.indexOf('_', 11);
+            if (pos != -1 && pos < originalName.length() - 1) {
+                originalName = originalName.substring(pos + 1);
+            }
+        }
+        originalName = originalName.replaceFirst("_view\\.pdf$", "");
+
         String docType = "PDF Document";
-        String lower = originalName.toLowerCase();
-        if (lower.endsWith(".docx") || lower.endsWith(".doc") || lower.endsWith(".rtf") || lower.endsWith(".odt")) {
-            docType = "Microsoft Word Document";
-        } else if (lower.endsWith(".pptx") || lower.endsWith(".ppt") || lower.endsWith(".pps") || lower.endsWith(".odp")) {
-            docType = "PowerPoint Presentation";
-        } else if (lower.endsWith(".txt") || lower.endsWith(".log") || lower.endsWith(".json") || lower.endsWith(".xml") || lower.endsWith(".md")) {
-            docType = "Plain Text Document";
-        } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls") || lower.endsWith(".csv")) {
+        if (sourceExtension.equals(".docx") || sourceExtension.equals(".doc") || sourceExtension.equals(".rtf") || sourceExtension.equals(".odt") || sourceExtension.equals(".dot") || sourceExtension.equals(".docm") || sourceExtension.equals(".dotx") || sourceExtension.equals(".dotm")) {
+            docType = "Word Document";
+        } else if (sourceExtension.equals(".xlsx") || sourceExtension.equals(".xls") || sourceExtension.equals(".csv")) {
             docType = "Excel Spreadsheet";
+        } else if (sourceExtension.equals(".txt") || sourceExtension.equals(".log") || sourceExtension.equals(".json") || sourceExtension.equals(".xml") || sourceExtension.equals(".md")) {
+            docType = "Text Document";
         }
 
-        String displayName = originalName.replaceFirst("_view\\.pdf$", "");
-        tvInfoFileName.setText(displayName);
-        tvInfoFileSizePages.setText(docType + " • " + formatFileSize(pdfFile.length()) + " • " + pageAdapter.getItemCount() + " Pages");
-        tvInfoFilePath.setText(pdfFile.getAbsolutePath());
+        tvInfoFileName.setText(originalName);
+        long fileSize = targetFile != null ? targetFile.length() : (pdfFile != null ? pdfFile.length() : 0);
+        int pageCount = pageAdapter != null ? pageAdapter.getItemCount() : 1;
+        tvInfoFileSizePages.setText(docType + " • " + formatFileSize(fileSize) + " • " + pageCount + " Pages");
+        tvInfoFilePath.setText(targetFile != null ? targetFile.getAbsolutePath() : (pdfFile != null ? pdfFile.getAbsolutePath() : ""));
 
         btnCloseDocInfo.setOnClickListener(v -> dialog.dismiss());
         dialog.show();

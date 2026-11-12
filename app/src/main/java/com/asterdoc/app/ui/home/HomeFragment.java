@@ -125,9 +125,17 @@ public class HomeFragment extends Fragment implements ToolAdapter.OnToolClickLis
 
         updateCategoryCards();
 
-        View nativeContainer = view.findViewById(R.id.nativeAdContainerHome);
-        if (nativeContainer != null) {
-            com.asterdoc.app.ads.AdManager.loadNativeAd(requireContext(), (ViewGroup) nativeContainer);
+        View nativeContainer1 = view.findViewById(R.id.nativeAdContainerHome1);
+        if (nativeContainer1 != null) {
+            com.asterdoc.app.ads.AdManager.loadNativeAd(requireContext(), (ViewGroup) nativeContainer1);
+        }
+        View nativeContainer2 = view.findViewById(R.id.nativeAdContainerHome2);
+        if (nativeContainer2 != null) {
+            com.asterdoc.app.ads.AdManager.loadNativeAd(requireContext(), (ViewGroup) nativeContainer2);
+        }
+        View nativeContainer3 = view.findViewById(R.id.nativeAdContainerHome3);
+        if (nativeContainer3 != null) {
+            com.asterdoc.app.ads.AdManager.loadNativeAd(requireContext(), (ViewGroup) nativeContainer3);
         }
 
         return view;

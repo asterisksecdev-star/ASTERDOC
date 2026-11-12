@@ -74,6 +74,7 @@
         <activity
             android:name=".ui.viewer.PdfViewerActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize"
             android:theme="@style/Theme.ASTERDOC">
 
             <!-- PDF Files -->

@@ -21,22 +21,21 @@
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
 
-            <!-- Back Button (White Circle) -->
+            <!-- Back Button (Standalone) -->
             <FrameLayout
                 android:id="@+id/btnTopBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_circle_white"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:contentDescription="Back"
                     android:src="@drawable/ic_arrow_back"
-                    app:tint="#000000" />
+                    app:tint="#FFFFFF" />
             </FrameLayout>
 
             <View
@@ -44,102 +43,73 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <!-- W (Word) Action Button (White Circle) -->
-            <FrameLayout
-                android:id="@+id/btnTopWord"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_circle_white"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="W"
-                    android:textColor="#000000"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
-            </FrameLayout>
-
-
-
-            <!-- Rotate Action Button (White Circle) -->
+            <!-- Rotate Action Button (Standalone) -->
             <FrameLayout
                 android:id="@+id/btnTopRotate"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_circle_white"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:contentDescription="Rotate"
-                    android:src="@drawable/ic_top_rotate"
-                    app:tint="#0288D1" />
+                    android:src="@drawable/ic_top_rotate" />
             </FrameLayout>
 
-            <!-- Info Action Button (White Circle) -->
+            <!-- Info Action Button (Standalone) -->
             <FrameLayout
                 android:id="@+id/btnTopInfo"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_circle_white"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:contentDescription="Details"
-                    android:src="@drawable/ic_info"
-                    app:tint="#0288D1" />
+                    android:src="@drawable/ic_info" />
             </FrameLayout>
 
-            <!-- Share Action Button (White Circle) -->
+            <!-- Share Action Button (Standalone) -->
             <FrameLayout
                 android:id="@+id/btnTopShare"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_circle_white"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:contentDescription="Share"
-                    android:src="@drawable/ic_top_share"
-                    app:tint="#D32F2F" />
+                    android:src="@drawable/ic_top_share" />
             </FrameLayout>
 
-            <!-- Menu Action Button (White Circle) -->
+            <!-- Menu Action Button (Standalone) -->
             <FrameLayout
                 android:id="@+id/btnTopMenu"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_circle_white"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:contentDescription="More options"
                     android:src="@drawable/ic_more_vert"
-                    app:tint="#000000" />
+                    app:tint="#FFFFFF" />
             </FrameLayout>
 
         </LinearLayout>
