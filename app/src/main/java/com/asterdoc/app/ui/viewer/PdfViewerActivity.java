@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import com.asterdoc.app.R;
 import com.asterdoc.app.util.BrandedToast;
+import com.asterdoc.app.data.AsterineStorageManager;
 import com.asterdoc.app.data.DocumentItem;
 import com.asterdoc.app.data.DocumentRepository;
 import com.asterdoc.app.pdf.PdfProcessor;
@@ -262,7 +263,7 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
 
                 File processed = workingFile;
                 String name = originalDisplayName.toLowerCase();
-                if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt")) {
+                if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") || name.endsWith(".dot") || name.endsWith(".docm") || name.endsWith(".dotx") || name.endsWith(".dotm")) {
                     sourceWordFile = workingFile;
                     processed = PdfProcessor.wordToPdf(
                             this,
@@ -415,11 +416,23 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
         if (fabEditDocument != null) fabEditDocument.setOnClickListener(v -> enterEditMode());
     }
 
+    private boolean isWordDocument() {
+        if (sourceWordFile != null && sourceWordFile.exists()) return true;
+        if (pdfFile != null && pdfFile.getName().toLowerCase(Locale.ROOT).endsWith("_view.pdf")) return true;
+        String ext = sourceExtension != null ? sourceExtension.toLowerCase(Locale.ROOT) : "";
+        return ext.contains("doc") || ext.contains("odt") || ext.contains("rtf") || ext.contains("dot") || ext.contains("xml") || ext.contains("html");
+    }
+
     private void showPopupMenu(View view) {
         androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, view);
         popup.getMenu().add(0, 101, 0, "Go to Page");
         popup.getMenu().add(0, 102, 1, "Page Overview");
-        popup.getMenu().add(0, 104, 2, "Sign PDF");
+
+        if (isWordDocument()) {
+            popup.getMenu().add(0, 103, 2, "Convert to PDF");
+        }
+
+        popup.getMenu().add(0, 104, 3, "Sign PDF");
 
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -429,6 +442,9 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             } else if (id == 102) {
                 showThumbnailGrid();
                 return true;
+            } else if (id == 103) {
+                saveWordAsPdf();
+                return true;
             } else if (id == 104) {
                 openToolForCurrentDoc("SIGN", "Sign PDF");
                 return true;
@@ -436,6 +452,40 @@ public class PdfViewerActivity extends AppCompatActivity implements PdfPageAdapt
             return false;
         });
         popup.show();
+    }
+
+    private void saveWordAsPdf() {
+        if (pdfFile != null && pdfFile.exists()) {
+            try {
+                File targetDir = AsterineStorageManager.getAsterineDirectory(this);
+                String displayName = (sourceWordFile != null ? sourceWordFile.getName() : pdfFile.getName()).replaceFirst("\\.[^.]+$", "") + "_Converted.pdf";
+                File outputPdf = AsterineStorageManager.getUniqueFile(targetDir, displayName);
+
+                try (FileInputStream fis = new FileInputStream(pdfFile);
+                     FileOutputStream fos = new FileOutputStream(outputPdf)) {
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = fis.read(buf)) > 0) {
+                        fos.write(buf, 0, len);
+                    }
+                }
+
+                DocumentItem newItem = new DocumentItem(
+                        String.valueOf(System.currentTimeMillis()),
+                        outputPdf.getName(),
+                        outputPdf.getAbsolutePath(),
+                        "PDF",
+                        outputPdf.length(),
+                        System.currentTimeMillis(),
+                        "Created"
+                );
+                DocumentRepository.getInstance(this).addDocument(newItem);
+
+                BrandedToast.show(this, "Converted and saved as " + outputPdf.getName() + " in Documents/Asterine");
+            } catch (Exception e) {
+                BrandedToast.show(this, "Conversion failed: " + e.getMessage());
+            }
+        }
     }
 
     private void scrollToPage(int pageIndex) {

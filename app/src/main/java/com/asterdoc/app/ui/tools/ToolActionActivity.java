@@ -14,6 +14,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
+import android.database.Cursor;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -454,8 +456,38 @@ public class ToolActionActivity extends AppCompatActivity {
 
     private File copyUriToTempFile(Uri uri) {
         try {
+            String extension = ".docx";
+            if (uri != null) {
+                String name = null;
+                if ("content".equalsIgnoreCase(uri.getScheme())) {
+                    try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            if (nameIndex != -1) {
+                                name = cursor.getString(nameIndex);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                if (name == null || name.trim().isEmpty()) {
+                    String path = uri.getPath();
+                    if (path != null) {
+                        int cut = path.lastIndexOf('/');
+                        if (cut != -1) name = path.substring(cut + 1);
+                    }
+                }
+                if (name != null && name.contains(".")) {
+                    int dot = name.lastIndexOf('.');
+                    if (dot != -1) {
+                        extension = name.substring(dot);
+                    }
+                }
+            }
+
             InputStream is = getContentResolver().openInputStream(uri);
-            File tempFile = File.createTempFile("temp_doc", ".pdf", getCacheDir());
+            if (is == null) return null;
+
+            File tempFile = File.createTempFile("temp_doc_", extension, getCacheDir());
             FileOutputStream fos = new FileOutputStream(tempFile);
             byte[] buf = new byte[8192];
             int len;

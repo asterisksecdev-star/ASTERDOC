@@ -779,9 +779,9 @@ public class PdfProcessor {
                 java.util.Locale.ROOT
         );
 
-        if (!name.endsWith(".doc") && !name.endsWith(".docx") && !name.endsWith(".odt")) {
+        if (!name.endsWith(".doc") && !name.endsWith(".docx") && !name.endsWith(".odt") && !name.endsWith(".rtf") && !name.endsWith(".dot") && !name.endsWith(".docm") && !name.endsWith(".dotx") && !name.endsWith(".dotm") && !name.endsWith(".xml") && !name.endsWith(".html") && !name.endsWith(".htm")) {
             throw new IllegalArgumentException(
-                    "Only DOC, DOCX and ODT files are supported by the Office renderer."
+                    "Only Word documents (.doc, .docx, .odt, .rtf) are supported by the Office renderer."
             );
         }
 
