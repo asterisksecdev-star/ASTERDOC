@@ -3,10 +3,16 @@
     android:height="36dp"
     android:viewportWidth="36"
     android:viewportHeight="36">
+    <!-- Document background sheet (Crimson Red) -->
     <path
         android:fillColor="#E53935"
-        android:pathData="M8,6C6.9,6 6,6.9 6,8V28C6,29.1 6.9,30 8,30H28C29.1,30 30,29.1 30,28V14L22,6H8Z" />
+        android:pathData="M8,4C6.9,4 6,4.9 6,6V30C6,31.1 6.9,32 8,32H28C29.1,32 30,31.1 30,30V12L22,4H8Z" />
+    <!-- Folded corner overlay -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M22,4L30,12H24C22.9,12 22,11.1 22,10V4Z" />
+    <!-- Bold white 'PDF' text badge -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M11,15H14C15.1,15 16,15.9 16,17C16,18.1 15.1,19 14,19H13V22H11V15ZM13,17V17H14V17H13ZM18,15H21C22.1,15 23,15.9 23,17V20C23,21.1 22.1,22 21,22H18V15ZM20,17H20V20H21V17H20Z" />
+        android:pathData="M10,15H13.5C14.6,15 15.5,15.9 15.5,17C15.5,18.1 14.6,19 13.5,19H12V22H10V15ZM12,17V17H13.5C13.8,17 14,16.8 14,17C14,17.2 13.8,17.5 13.5,17.5H12V17ZM17.5,15H21C22.1,15 23,15.9 23,17V20C23,21.1 22.1,22 21,22H17.5V15ZM19.5,17H19.5V20H21V17H19.5ZM24.5,15H28V17H26V18.5H27.5V20.5H26V22H24.5V15Z" />
 </vector>

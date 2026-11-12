@@ -3,10 +3,16 @@
     android:height="36dp"
     android:viewportWidth="36"
     android:viewportHeight="36">
+    <!-- Document background sheet (Warm Amber / Gold) -->
     <path
-        android:fillColor="#5C6BC0"
-        android:pathData="M8,6C6.9,6 6,6.9 6,8V28C6,29.1 6.9,30 8,30H28C29.1,30 30,29.1 30,28V14L22,6H8Z" />
+        android:fillColor="#FFA726"
+        android:pathData="M8,4C6.9,4 6,4.9 6,6V30C6,31.1 6.9,32 8,32H28C29.1,32 30,31.1 30,30V12L22,4H8Z" />
+    <!-- Folded corner overlay -->
+    <path
+        android:fillColor="#F57C00"
+        android:pathData="M22,4L30,12H24C22.9,12 22,11.1 22,10V4Z" />
+    <!-- Clean text lines inside document -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M13,15H21V17H18V24H16V17H13V15Z" />
+        android:pathData="M11,15H25V17H11V15ZM11,20H25V22H11V20ZM11,25H20V27H11V25Z" />
 </vector>

@@ -212,24 +212,19 @@ public class DocumentAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         String type = item.getType();
         String name = item.getName().toLowerCase();
         int iconRes;
-        int badgeColor;
-        if (type != null && type.equalsIgnoreCase("WORD") || name.endsWith(".docx") || name.endsWith(".doc")) {
-            iconRes = android.R.drawable.ic_menu_edit;
-            badgeColor = Color.parseColor("#1A73E8");
-        } else if (type != null && (type.equalsIgnoreCase("EXCEL") || name.endsWith(".xlsx") || name.endsWith(".xls"))) {
-            iconRes = android.R.drawable.ic_menu_sort_by_size;
-            badgeColor = Color.parseColor("#0D9488");
-        } else if (type != null && type.equalsIgnoreCase("TXT") || name.endsWith(".txt")) {
-            iconRes = android.R.drawable.ic_menu_search;
-            badgeColor = Color.parseColor("#D97706");
+        if (type != null && type.equalsIgnoreCase("WORD") || name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".rtf") || name.endsWith(".odt") || name.endsWith(".dot")) {
+            iconRes = R.drawable.ic_cat_word;
+        } else if (type != null && (type.equalsIgnoreCase("EXCEL") || name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv"))) {
+            iconRes = R.drawable.ic_cat_excel;
+        } else if (type != null && type.equalsIgnoreCase("TXT") || name.endsWith(".txt") || name.endsWith(".log") || name.endsWith(".md")) {
+            iconRes = R.drawable.ic_cat_txt;
         } else {
-            iconRes = android.R.drawable.ic_menu_save;
-            badgeColor = Color.parseColor("#EA4335");
+            iconRes = R.drawable.ic_cat_pdf;
         }
         holder.ivIcon.setImageResource(iconRes);
-        holder.ivIcon.setBackgroundResource(R.drawable.bg_tool_icon_container);
-        holder.ivIcon.setImageTintList(ColorStateList.valueOf(Color.WHITE));
-        holder.ivIcon.setBackgroundTintList(ColorStateList.valueOf(badgeColor));
+        holder.ivIcon.setBackground(null);
+        holder.ivIcon.setImageTintList(null);
+        holder.ivIcon.setBackgroundTintList(null);
 
         String key = getKey(item);
         boolean isSelected = selectedKeys.contains(key);

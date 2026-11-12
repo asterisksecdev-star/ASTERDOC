@@ -3,10 +3,16 @@
     android:height="36dp"
     android:viewportWidth="36"
     android:viewportHeight="36">
+    <!-- Document background sheet (Royal Blue) -->
     <path
-        android:fillColor="#1E88E5"
-        android:pathData="M8,6C6.9,6 6,6.9 6,8V28C6,29.1 6.9,30 8,30H28C29.1,30 30,29.1 30,28V14L22,6H8Z" />
+        android:fillColor="#1A73E8"
+        android:pathData="M8,4C6.9,4 6,4.9 6,6V30C6,31.1 6.9,32 8,32H28C29.1,32 30,31.1 30,30V12L22,4H8Z" />
+    <!-- Folded corner overlay -->
+    <path
+        android:fillColor="#1557B0"
+        android:pathData="M22,4L30,12H24C22.9,12 22,11.1 22,10V4Z" />
+    <!-- Bold white 'W' symbol -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M11,16H13L15,22L17,16H19L21,24H19.2L18,19L16.5,24H15L13.5,19L12.3,24H10.5L11,16Z" />
+        android:pathData="M11,15L13.5,23L15.5,18L18,23L20.5,15H18.8L16.8,21L14.5,16H13.5L11.2,21L9.2,15H11Z" />
 </vector>
