@@ -15,8 +15,8 @@ android {
         applicationId = "com.asterdoc.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 23
-        versionName = "1.2"
+        versionCode = 24
+        versionName = "1.0"
 
         // Google test ad-unit IDs — replace with your own before production
         buildConfigField("String", "ADMOB_INTERSTITIAL_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
